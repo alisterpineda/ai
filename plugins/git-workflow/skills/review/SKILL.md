@@ -50,7 +50,7 @@ These hold for the whole run; the steps below rely on them rather than restating
 
 - **Report only.** Never modify files unless `--fix` was passed — and then only in step 9.
 - **Your final message is the entire result.** As a fork, only your final message reaches the user, and it arrives without any surrounding conversation. Whatever ends the run — the report, a "nothing to review" statement, an argument error — must be that final message and must stand on its own.
-- **The snapshot is the reviewed state.** Every reviewer and verifier reads the change from `<snapshot>/diff.patch` (plus `<snapshot>/untracked/` when in scope), never from re-run git commands, and every `file:line` citation derives from `diff.patch`. The live repository is for surrounding context only — it can differ from the snapshot (a partially staged file has other content and line numbers; the user may keep editing during a background review).
+- **The snapshot is the reviewed state.** Every reviewer and verifier reads the change from `<snapshot>/diff.patch`, never from re-run git commands, and every `file:line` citation derives from `diff.patch`. The live repository is for surrounding context only — it can differ from the snapshot (a partially staged file has other content and line numbers; the user may keep editing during a background review).
 - **No unit of work is dropped.** If a spawned subagent fails, hangs, or never returns, perform its unit yourself inline, following the same charter file exactly, and continue. Never stall waiting on it, never leave a finding unverified, and never let a finding into the report by default.
 
 ## 1. Parse arguments
@@ -64,19 +64,19 @@ Arguments arrive as a single string. Flags come first, target last:
 Parse left to right:
 
 - `--fix` — after composing the report, apply fixes for confirmed findings (see step 9).
-- `--model <name>` — model to use for reviewer and verifier subagents (e.g. `haiku`, `sonnet`, `opus`, or a full model ID). Your own orchestration always stays on the model you were started with; this flag only affects subagents you spawn. If the host's subagent tool doesn't accept the given value, note it in the report header and continue with the default model rather than failing.
-- Anything after the flags is the **target**. Any unrecognized `--flag` — leading or trailing (e.g. `review src/ --fix` puts the flag after the target) — is an error: stop with a one-line explanation that flags come before the target, rather than silently absorbing the token into the target.
+- `--model <name>` — model to use for reviewer and verifier subagents (e.g. `haiku`, `sonnet`, `opus`, or a full model ID). Your own orchestration always stays on the model you were started with; this flag only affects subagents you spawn. A `--model` with no value (the next token is missing or is itself a flag) is an argument error, handled like an unrecognized flag below. If the host's subagent tool doesn't accept the given value, note it in the report header and continue with the default model rather than failing.
+- Anything after the flags is the **target** — a branch, a commit, or a commit range (step 2 defines each; paths are not supported). Any unrecognized `--flag` — leading or trailing (e.g. `review main --fix` puts the flag after the target) — is an error: stop with a one-line explanation that flags come before the target, rather than silently absorbing the token into the target.
 
 ARGUMENTS: $ARGUMENTS
 
 ## 2. Resolve the target
 
-- **No target**: if anything is staged (`git diff --cached --quiet` exits non-zero), review the staged changes only — `git diff --cached`. Otherwise review all uncommitted changes — unstaged and untracked files (`git status`, `git diff HEAD`, plus the untracked files themselves). The report title says which scope applied ("staged changes" vs "uncommitted changes") so a surprising staging state is visible. If the working tree is clean, stop with a statement that there is nothing to review and that an explicit target (branch, commit range, or path) can be passed instead.
+- **No target**: if anything is staged (`git diff --cached --quiet` exits non-zero), review the staged changes only — `git diff --cached`. Otherwise review all uncommitted changes — unstaged and untracked files (`git status`, `git diff HEAD`, plus the untracked files themselves). The report title says which scope applied ("staged changes" vs "uncommitted changes") so a surprising staging state is visible. If the working tree is clean, stop with a statement that there is nothing to review and that an explicit target (branch, commit, or commit range) can be passed instead.
 - **Branch name**: review what the current branch adds relative to it — `git diff <branch>...HEAD` (three dots, so the comparison is from the merge base).
-- **Commit range** (`A..B`): review that range's diff. A **single commit** means that commit's own change: `git show <commit>` (equivalently `git diff <commit>^..<commit>`) — never `git diff <commit>`, which would diff against the working tree instead.
-- **Path**: review uncommitted changes limited to that path.
+- **Commit range** (`A..B`): review that range's diff. A **single commit** means that commit's own change: `git show --format= <commit>` (the empty format keeps the commit header out of the patch) — never `git diff <commit>`, which would diff against the working tree instead. `git show` on a merge commit prints only conflict-resolution hunks (nothing at all for a clean merge), so resolve a merge commit as its change against the first parent — `git diff <commit>^1..<commit>` — and state that in the report title; a different parent can be passed as an explicit `<parent>..<commit>` range.
+- **Anything else** — a path, or a token that is neither a range nor something `git rev-parse --verify --quiet <target>^{commit}` resolves — is an argument error: stop with a one-line explanation naming the supported target forms (branch, commit, commit range). Do not guess at a scope and do not fall back to the no-target behavior.
 
-If the resolved diff is empty (an explicit target that adds no changes — e.g. a branch already merged, or a path with no uncommitted edits), stop with a statement that there is nothing to review for that target — do not snapshot or spawn reviewers over an empty diff.
+If the resolved diff is empty (an explicit target that adds no changes — e.g. a branch already merged), stop with a statement that there is nothing to review for that target — do not snapshot or spawn reviewers over an empty diff.
 
 The resolved target appears in the report's title line (step 8), which is how the user catches a misinterpretation — state it there exactly as you resolved it, not as it was typed.
 
@@ -86,10 +86,20 @@ Freeze what is being reviewed into a fresh snapshot directory that this run crea
 
 Inside it:
 
-- Redirect the exact diff output to `<snapshot>/diff.patch` — **write it without reading it**. Judging the code is the reviewers' job; a diff loaded here would only ride along in every later turn of this run and pre-form opinions that undermine their independence.
-- When untracked files are in scope, copy each one to `<snapshot>/untracked/<relative-path>` — copies, not a list of paths, so later edits to those files cannot leak into the review.
+- Redirect the exact diff output to `<snapshot>/diff.patch`, running the git command with `-c diff.noprefix=false -c diff.mnemonicPrefix=false` so the patch keeps the standard `a/`/`b/` prefixes that later parsing relies on — **write it without reading it**. Judging the code is the reviewers' job; a diff loaded here would only ride along in every later turn of this run and pre-form opinions that undermine their independence.
+- When untracked files are in scope (`git diff` never shows them), append each one to the same file as a new-file hunk. Enumerate them NUL-delimited and pass each path through a shell variable, never by rendering the filename into command text (a filename is untrusted input and may contain spaces, non-ASCII bytes, or shell metacharacters):
 
-Then build a short file map from `git diff --stat` / `--name-status` over the same range plus the untracked list: which files changed, roughly how much, and what kind of change each is (logic, config, tests, docs, dependencies, generated code), inferred from paths and extensions. Where step 4 needs to know what the code touches (shell execution, SQL, network calls, I/O in loops), answer with a targeted `grep` over `diff.patch`; peek at a single file's hunk only when its path is genuinely ambiguous. The map drives perspective selection and gives reviewers a starting point.
+  ```sh
+  git ls-files -z --others --exclude-standard | while IFS= read -r -d '' p; do
+    before=$(wc -c < "$SNAP/diff.patch")
+    git diff --no-index -- /dev/null "$p" >> "$SNAP/diff.patch"
+    [ "$(wc -c < "$SNAP/diff.patch")" -gt "$before" ] || printf '%s\n' "$p" >> "$SNAP/uncaptured.txt"
+  done
+  ```
+
+  This gives untracked files real line numbers in the one authoritative patch, freezes their content against later edits, and reduces binary files to a one-line "Binary files differ" marker. Judge success by output, not exit code: `git diff --no-index` exits 1 both when it wrote a hunk and when it could not access the path, so a path that appended nothing was not captured. Never drop such a path silently — list every entry of `uncaptured.txt` in the report header as an untracked file the review did not cover.
+
+Then build a short file map from `git apply --numstat <snapshot>/diff.patch` (added/deleted line counts per file, computed from the frozen patch rather than a second read of the live tree). If `git apply` rejects the patch, fall back to `git diff --numstat` over the resolved range plus the untracked list from the step above — never read `diff.patch` to build the map. The map records which files changed, roughly how much, and what kind of change each is (logic, config, tests, docs, dependencies, generated code), inferred from paths and extensions. Where step 4 needs to know what the code touches (shell execution, SQL, network calls, I/O in loops), answer with a targeted `grep` over `diff.patch`; peek at a single file's hunk only when its path is genuinely ambiguous. The map drives perspective selection and gives reviewers a starting point.
 
 ## 4. Select perspectives
 
@@ -97,20 +107,22 @@ Each perspective has a charter file in this skill's `references/` directory (res
 
 | Perspective | Charter | Runs when |
 |---|---|---|
-| Correctness | `references/correctness.md` | Always. |
+| Correctness | `references/correctness.md` | Always, except pure docs/generated-file diffs (config still counts — a wrong value is a correctness bug). |
 | Security | `references/security.md` | The diff touches input handling, auth, network calls, shell/process execution, file paths, serialization, SQL/queries, secrets, or dependency/config changes. |
 | Tests | `references/tests.md` | Source logic changed (whether or not tests changed with it), or test files themselves changed. |
 | Performance | `references/performance.md` | The diff touches loops or recursion, database/network/file I/O, caching, concurrency, or code on a hot path (per-request, per-item, startup, UI). |
 | Maintainability | `references/maintainability.md` | Any non-trivial code change — skip only for pure docs/config/generated-file diffs. |
 
-Skipping is not silent: the report header lists which perspectives were skipped and why. When in doubt about a criterion, run the perspective — a wasted pass is cheaper than a missed vulnerability.
+"Docs" in these criteria means prose no agent executes — a README, a changelog, a comment-only edit. Files that are instructions an agent runs — `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, agent, command, rule, and prompt files — are logic, whatever their extension, and every criterion treats them as such.
+
+Skipping is not silent: the report header lists which perspectives were skipped and why. When in doubt about a criterion, run the perspective — a wasted pass is cheaper than a missed vulnerability. If every perspective is skipped (a diff of nothing but docs or generated files), skip steps 5–7 and produce the header-only report defined in step 8.
 
 ## 5. Run the reviewers
 
 **If the host provides a subagent-spawning tool** (Claude Code's Agent/Task tool or equivalent): spawn all selected reviewers in parallel, one subagent per perspective, applying `--model` if given. Each subagent's prompt must contain:
 
 1. The absolute path to its charter file, with the instruction to read it first and adopt that role completely.
-2. The resolved target, the file map from step 3, and the snapshot rule from the invariants, spelled out: read the change only from the absolute path of `<snapshot>/diff.patch` — the authoritative state, from which every `file:line` citation must come, since live files can differ — plus, when the scope includes untracked files (`git diff` never shows them), the absolute path of `<snapshot>/untracked/` with the instruction to read every file under it in full as part of the reviewed change.
+2. The resolved target, the file map from step 3, and the snapshot rule from the invariants, spelled out: read the change only from the absolute path of `<snapshot>/diff.patch` — the authoritative state, from which every `file:line` citation must come, since live files can differ. Untracked files in scope already appear in it as new-file hunks, so no other source is needed.
 3. That it has read access to the full repository for context, but must not modify anything.
 4. That its final message must be only its findings in the charter's output format (or the charter's explicit "no findings" statement) — no preamble, no summary of its process.
 
@@ -124,7 +136,7 @@ Merge findings that share a root cause, even when different perspectives describ
 
 Every deduplicated finding goes through refutation — no exceptions, including findings that look obviously right. The charter is `references/verifier.md`.
 
-With subagents: group the findings by code site — same file, or within a large file the same function or region — and spawn one verifier per group, in parallel, in waves of at most 8 when groups are numerous, applying `--model` if given. Each verifier gets the charter path, the full text of every finding in its group, and the same snapshot paths the reviewers got (`<snapshot>/diff.patch`, plus `<snapshot>/untracked/` when in scope), and returns one verdict per finding. Grouping only saves re-reading the diff and surrounding code once per finding; the independence that matters — a verifier that did not write the findings re-deriving the truth from the code — is intact, and the charter requires each finding to be judged on its own.
+With subagents: group the findings by code site — same file, or within a large file the same function or region — and spawn one verifier per group, in parallel, in waves of at most 8 when groups are numerous, applying `--model` if given. Each verifier gets the charter path, the full text of every finding in its group, and the same snapshot path the reviewers got (`<snapshot>/diff.patch`), and returns one verdict per finding. Grouping only saves re-reading the diff and surrounding code once per finding; the independence that matters — a verifier that did not write the findings re-deriving the truth from the code — is intact, and the charter requires each finding to be judged on its own.
 
 Without subagents: verify sequentially, one finding at a time. Before each one, re-read the relevant code from scratch and actively look for reasons the finding is wrong; you wrote these findings minutes ago, so bias toward refutation to compensate.
 
@@ -155,6 +167,8 @@ Perspectives run: <list>. Skipped: <perspective — reason, or "none">.
 ## Considered and rejected
 - <short title> (<perspective>) — <one-line refutation reason>
 ```
+
+If step 4 skipped every perspective, the report is the title line, the perspectives line, and one sentence stating that no perspective applied so nothing was reviewed — omit the count line, the findings section, and the rejected appendix, which only describe a review that ran.
 
 Where the verifier corrected a severity, append *(severity corrected from X by verifier)* to that finding's title so the adjustment is visible. If every finding was confirmed, the appendix is the single line `- None — all findings survived verification.` If nothing was confirmed, say so plainly and still show the rejected appendix — it is the evidence the review actually looked.
 
