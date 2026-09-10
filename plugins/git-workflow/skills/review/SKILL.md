@@ -69,37 +69,35 @@ Parse left to right:
 
 ARGUMENTS: $ARGUMENTS
 
-## 2. Resolve the target
+## 2. Resolve the target and snapshot the diff
 
-- **No target**: if anything is staged (`git diff --cached --quiet` exits non-zero), review the staged changes only — `git diff --cached`. Otherwise review all uncommitted changes — unstaged and untracked files (`git status`, `git diff HEAD`, plus the untracked files themselves). The report title says which scope applied ("staged changes" vs "uncommitted changes") so a surprising staging state is visible. If the working tree is clean, stop with a statement that there is nothing to review and that an explicit target (branch, commit, or commit range) can be passed instead.
-- **Branch name**: review what the current branch adds relative to it — `git diff <branch>...HEAD` (three dots, so the comparison is from the merge base).
-- **Commit range** (`A..B`): review that range's diff. A **single commit** means that commit's own change: `git show --format= <commit>` (the empty format keeps the commit header out of the patch) — never `git diff <commit>`, which would diff against the working tree instead. `git show` on a merge commit prints only conflict-resolution hunks (nothing at all for a clean merge), so resolve a merge commit as its change against the first parent — `git diff <commit>^1..<commit>` — and state that in the report title; a different parent can be passed as an explicit `<parent>..<commit>` range.
-- **Anything else** — a path, or a token that is neither a range nor something `git rev-parse --verify --quiet <target>^{commit}` resolves — is an argument error: stop with a one-line explanation naming the supported target forms (branch, commit, commit range). Do not guess at a scope and do not fall back to the no-target behavior.
+Both are done by one script, run from this skill's base directory (resolve the path from wherever this skill was loaded):
 
-If the resolved diff is empty (an explicit target that adds no changes — e.g. a branch already merged), stop with a statement that there is nothing to review for that target — do not snapshot or spawn reviewers over an empty diff.
+```
+bash <skill-dir>/scripts/snapshot.sh [--snapshots <dir>] [<target>]
+```
 
-The resolved target appears in the report's title line (step 8), which is how the user catches a misinterpretation — state it there exactly as you resolved it, not as it was typed.
+If the host designates a session scratchpad directory, pass it as `--snapshots` — the script cannot discover it on its own and otherwise falls back to the system temp directory. The script resolves the target, freezes its diff into a fresh directory that it creates under that root, and prints a short manifest — the snapshot path, the resolved scope, a per-file added/deleted table, and any untracked files it could not capture. It never prints the diff. Its resolution rules, which the report title must reflect exactly:
 
-## 3. Snapshot the diff and map it
+- **No target**: the staged changes if anything is staged, otherwise all uncommitted changes including untracked files. The scope line says which applied, so a surprising staging state is visible.
+- **Branch or tag name**: what HEAD adds relative to it, from the merge base.
+- **Commit range** (`A..B` or `A...B`): that range's diff.
+- **Single commit** (a SHA, `HEAD`, `HEAD~2`): that commit's own change. A merge commit is diffed against its first parent and a root commit against the empty tree; the scope line says so.
+- **Anything else** — a path, or a token git cannot resolve — is rejected.
 
-Freeze what is being reviewed into a fresh snapshot directory that this run creates — a new uniquely-named subdirectory under wherever the host wants temporary files (e.g. inside a session scratchpad directory, if one is designated), or `mktemp -d` if the host designates nothing. Never use a host-designated directory itself as the snapshot: step 8 deletes the snapshot directory, and the delete must only ever hit a directory this run created.
+Act on the exit code:
 
-Inside it:
+- `0` — the snapshot is ready; continue with step 3.
+- `2` — argument error. Stop, with the script's stderr message as your final message; do not guess at a scope and do not fall back to the no-target behavior.
+- `3` — nothing to review (a clean working tree, or an explicit target whose diff is empty, e.g. a branch already merged). Stop with the script's message.
 
-- Redirect the exact diff output to `<snapshot>/diff.patch`, running the git command with `-c diff.noprefix=false -c diff.mnemonicPrefix=false` so the patch keeps the standard `a/`/`b/` prefixes that later parsing relies on — **write it without reading it**. Judging the code is the reviewers' job; a diff loaded here would only ride along in every later turn of this run and pre-form opinions that undermine their independence.
-- When untracked files are in scope (`git diff` never shows them), append each one to the same file as a new-file hunk. Enumerate them NUL-delimited and pass each path through a shell variable, never by rendering the filename into command text (a filename is untrusted input and may contain spaces, non-ASCII bytes, or shell metacharacters):
+Untracked files in scope are appended to `diff.patch` as new-file hunks, so they have real line numbers in the one authoritative patch, their content is frozen against later edits, and binaries collapse to a one-line "Binary files differ" marker. A file the script could not read is listed under *uncaptured* in the manifest instead — the report header must name every such file as one the review did not cover.
 
-  ```sh
-  git ls-files -z --others --exclude-standard | while IFS= read -r -d '' p; do
-    before=$(wc -c < "$SNAP/diff.patch")
-    git diff --no-index -- /dev/null "$p" >> "$SNAP/diff.patch"
-    [ "$(wc -c < "$SNAP/diff.patch")" -gt "$before" ] || printf '%s\n' "$p" >> "$SNAP/uncaptured.txt"
-  done
-  ```
+## 3. Map the change
 
-  This gives untracked files real line numbers in the one authoritative patch, freezes their content against later edits, and reduces binary files to a one-line "Binary files differ" marker. Judge success by output, not exit code: `git diff --no-index` exits 1 both when it wrote a hunk and when it could not access the path, so a path that appended nothing was not captured. Never drop such a path silently — list every entry of `uncaptured.txt` in the report header as an untracked file the review did not cover.
+Never read `<snapshot>/diff.patch` yourself. Judging the code is the reviewers' job; a diff loaded here would only ride along in every later turn of this run and pre-form opinions that undermine their independence.
 
-Then build a short file map from `git apply --numstat <snapshot>/diff.patch` (added/deleted line counts per file, computed from the frozen patch rather than a second read of the live tree). If `git apply` rejects the patch, fall back to `git diff --numstat` over the resolved range plus the untracked list from the step above — never read `diff.patch` to build the map. The map records which files changed, roughly how much, and what kind of change each is (logic, config, tests, docs, dependencies, generated code), inferred from paths and extensions. Where step 4 needs to know what the code touches (shell execution, SQL, network calls, I/O in loops), answer with a targeted `grep` over `diff.patch`; peek at a single file's hunk only when its path is genuinely ambiguous. The map drives perspective selection and gives reviewers a starting point.
+Build a short file map from the manifest's file table: which files changed, roughly how much, and what kind of change each is (logic, config, tests, docs, dependencies, generated code), inferred from paths and extensions. Where step 4 needs to know what the code touches (shell execution, SQL, network calls, I/O in loops), answer with a targeted `grep` over `diff.patch`; peek at a single file's hunk only when its path is genuinely ambiguous. The map drives perspective selection and gives reviewers a starting point.
 
 ## 4. Select perspectives
 
@@ -144,13 +142,14 @@ Findings verdict `CONFIRMED` go in the report. Findings verdict `REFUTED` go in 
 
 ## 8. Report
 
-Assemble the report using this structure. Without `--fix`, output it as your final message. With `--fix`, hold it, complete step 9 first, and output the report with the fix summary appended as one final message. Just before sending that final message, delete the snapshot directory — exactly the directory this run created in step 3, never a host-designated parent (best effort — a failed cleanup is not worth mentioning in the report).
+Assemble the report using this structure. Without `--fix`, output it as your final message. With `--fix`, hold it, complete step 9 first, and output the report with the fix summary appended as one final message. Just before sending that final message, delete the snapshot directory — exactly the path on the manifest's `snapshot:` line, which the script created for this run (best effort — a failed cleanup is not worth mentioning in the report).
 
 ```
 # Adversarial review: <target>
 
 Perspectives run: <list>. Skipped: <perspective — reason, or "none">.
 <If sequential fallback: note it here, including --model being ignored.>
+<If the manifest listed uncaptured untracked files: name each one as not covered by this review.>
 <N> findings confirmed, <M> refuted.
 
 ## Confirmed findings
