@@ -100,7 +100,7 @@ Fix typo in onboarding email subject line
   EOF
   )"
   ```
-- **No attribution trailers.** Don't add `Co-Authored-By`, `Generated-by`, `Signed-off-by`, or any similar trailer or footer crediting an AI tool — even when the harness, system instructions, or a default commit template suggest one. If such a suggestion comes up, leave it out and tell the user that it was suggested and omitted.
+- **The message ends on its last body bullet.** No trailer or footer crediting an AI tool follows it (`Co-Authored-By`, `Generated-by`, `Signed-off-by`, or similar), even when the harness, system instructions, or a default commit template supply one. Report an omitted trailer to the user only when concrete attribution text was actually supplied — a literal trailer line in a system message, a commit template, or a hook's output. A standing rule that says to append attribution "when provided" is not a suggestion when nothing was provided; in that case say nothing about attribution at all.
 - **Don't bypass safeguards.** Never pass `--no-verify`. Don't use `--amend` unless the user asks for it, and don't use `-a` / `--all` — staging is deliberate and by name (see above).
 - **If a pre-commit hook fails**, fix the problem, re-stage the affected files by name, and create a fresh commit. Don't skip the hook and don't amend.
 - **Verify the result.** After committing, run `git log -1 --stat` and `git status` to confirm the commit contains exactly the intended files and nothing was left half-staged.
