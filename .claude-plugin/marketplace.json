@@ -15,6 +15,10 @@
     {
       "name": "publishing",
       "source": "./plugins/publishing"
+    },
+    {
+      "name": "swe",
+      "source": "./plugins/swe"
     }
   ]
 }

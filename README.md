@@ -47,6 +47,14 @@ Document production skills.
 |---|---|---|
 | `typst` | model-invoked | Writes and iterates on Typst documents with a compile → render → inspect loop. Ships a neutral `base.typ`, conservative design principles, and `render.sh` / `probe.sh` scripts for deterministic verification. Requires the `typst` CLI. |
 
+### swe
+
+Software-engineering workflow skills.
+
+| Skill | Invocation | What it does |
+|---|---|---|
+| `implement` | **user-only**: `/swe:implement [--delegate] [--model <name>] <target>` | Implements a spec file, GitHub issue, Azure DevOps work item, or in-conversation plan exactly as written — no redesign, no commit. Derives acceptance criteria, builds test-first, then verifies every criterion against the run's diff and reports. `--delegate` cuts the work into sequential phases run by subagents, optionally on a cheaper `--model`; verification always stays with the orchestrator. |
+
 ## Repo structure
 
 See [CLAUDE.md](CLAUDE.md) for the plugin skeleton and authoring conventions.
