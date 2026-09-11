@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) — read by Claude Code and GitHub Copilot ──
 name: review
-description: "Adversarial multi-perspective code review. Spawns independent reviewer agents (correctness, security, maintainability, tests, performance), then puts every finding through a skeptic verification pass before reporting. Usage: /git-workflow:review [--fix] [--model <name>] [target]. Flags come before the target. With no target, reviews the staged changes — or all uncommitted changes if nothing is staged. User-invoked only — never invoke this skill on your own initiative."
+description: "Adversarial multi-perspective code review. Spawns independent reviewer agents (correctness, security, maintainability, tests, performance), then puts every finding through a skeptic verification pass before reporting. Usage: /git-workflow:review [--fix] [--light|--full] [--model <name>] [target]. Flags come before the target. With no target, reviews the staged changes — or all uncommitted changes if nothing is staged. Small diffs get a light tier (fewer perspectives) automatically; --light and --full override. User-invoked only — never invoke this skill on your own initiative."
 compatibility: "Not fully portable — deliberately uses frontmatter extensions beyond the agentskills.io spec. On Claude Code, context: fork runs the whole skill in a forked subagent that orchestrates reviewer/verifier subagents, keeping the review out of the main conversation. VS Code Copilot Chat also honors context: fork (experimental, opt-in via github.copilot.chat.skillTool.enabled), forking into a generic subagent — the agent/background fields are Claude-only and ignored there. Hosts that ignore context: fork entirely (Copilot CLI, Codex) run the same workflow in the main conversation instead — still with parallel reviewers where a subagent tool exists; hosts with no subagent tool fall back to sequential passes. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extension, honored by Claude Code and GitHub Copilot (same field
@@ -15,7 +15,7 @@ disable-model-invocation: true
 # user-invocable: true is Copilot's default (keeps the slash command available);
 # stated explicitly to document intent alongside disable-model-invocation.
 user-invocable: true
-argument-hint: "[--fix] [--model <name>] [target]"
+argument-hint: "[--fix] [--light|--full] [--model <name>] [target]"
 
 # ── Fork extensions ──
 # context: fork runs this skill's body in a forked subagent — the fork IS the
@@ -58,12 +58,13 @@ These hold for the whole run; the steps below rely on them rather than restating
 Arguments arrive as a single string. Flags come first, target last:
 
 ```
-/git-workflow:review [--fix] [--model <name>] [target]
+/git-workflow:review [--fix] [--light|--full] [--model <name>] [target]
 ```
 
 Parse left to right:
 
 - `--fix` — after composing the report, apply fixes for confirmed findings (see step 9).
+- `--light` / `--full` — force the review tier (step 4) instead of letting the diff's size decide. Passing both is an argument error, handled like an unrecognized flag below.
 - `--model <name>` — model to use for reviewer and verifier subagents (e.g. `haiku`, `sonnet`, `opus`, or a full model ID). Your own orchestration always stays on the model you were started with; this flag only affects subagents you spawn. A `--model` with no value (the next token is missing or is itself a flag) is an argument error, handled like an unrecognized flag below. If the host's subagent tool doesn't accept the given value, note it in the report header and continue with the default model rather than failing.
 - Anything after the flags is the **target** — a branch, a commit, or a commit range (step 2 defines each; paths are not supported). Any unrecognized `--flag` — leading or trailing (e.g. `review main --fix` puts the flag after the target) — is an error: stop with a one-line explanation that flags come before the target, rather than silently absorbing the token into the target.
 
@@ -77,7 +78,7 @@ Both are done by one script, run from this skill's base directory (resolve the p
 bash <skill-dir>/scripts/snapshot.sh [--snapshots <dir>] [<target>]
 ```
 
-If the host designates a session scratchpad directory, pass it as `--snapshots` — the script cannot discover it on its own and otherwise falls back to the system temp directory. The script resolves the target, freezes its diff into a fresh directory that it creates under that root, and prints a short manifest — the snapshot path, the resolved scope, a per-file added/deleted table, and any untracked files it could not capture. It never prints the diff. Its resolution rules, which the report title must reflect exactly:
+If the host designates a session scratchpad directory, pass it as `--snapshots` — the script cannot discover it on its own and otherwise falls back to the system temp directory. The script resolves the target, freezes its diff into a fresh directory that it creates under that root, and prints a short manifest — the snapshot path, the resolved scope, a `size:` line and the `tier:` it implies (`light` for a change of at most 3 files and 40 changed lines, `full` otherwise), a per-file added/deleted table, and any untracked files it could not capture. It never prints the diff. Its resolution rules, which the report title must reflect exactly:
 
 - **No target**: the staged changes if anything is staged, otherwise all uncommitted changes including untracked files. The scope line says which applied, so a surprising staging state is visible.
 - **Branch or tag name**: what HEAD adds relative to it, from the merge base.
@@ -101,6 +102,11 @@ Build a short file map from the manifest's file table: which files changed, roug
 
 ## 4. Select perspectives
 
+First fix the tier: `--light` or `--full` if given, otherwise the manifest's `tier:` line. The tier scales the review to the size of the change — a five-line fix does not warrant five reviewers each re-reading the same callers and callees.
+
+- **Full tier**: apply every criterion in the table below.
+- **Light tier**: run correctness, plus security if its criterion is met. Skip tests and maintainability — on a small diff their findings are mostly "add a test" and "consider extracting", which is not what a small review is for. The header lists them as skipped with the tier as the reason. A small change is not automatically a safe one: when the file map says the diff touches auth, money, migrations, or the like, the security criterion still fires, and `--full` is the override when the concern is broader than that.
+
 Each perspective has a charter file in this skill's `references/` directory (resolve paths from this skill's base directory). Select using these criteria:
 
 | Perspective | Charter | Runs when |
@@ -113,7 +119,7 @@ Each perspective has a charter file in this skill's `references/` directory (res
 
 "Docs" in these criteria means prose no agent executes — a README, a changelog, a comment-only edit. Files that are instructions an agent runs — `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, agent, command, rule, and prompt files — are logic, whatever their extension, and every criterion treats them as such.
 
-Skipping is not silent: the report header lists which perspectives were skipped and why. When in doubt about a criterion, run the perspective — a wasted pass is cheaper than a missed vulnerability. If every perspective is skipped (a diff of nothing but docs or generated files), skip steps 5–7 and produce the header-only report defined in step 8.
+Skipping is not silent: the report header lists which perspectives were skipped and why. In the full tier, when in doubt about a criterion, run the perspective — a wasted pass is cheaper than a missed vulnerability. In the light tier the tier decides; do not add perspectives back on a hunch, since the passes it removes are most of what a small review costs. If every perspective is skipped (a diff of nothing but docs or generated files), skip steps 5–7 and produce the header-only report defined in step 8.
 
 ## 5. Run the reviewers
 
@@ -147,6 +153,7 @@ Assemble the report using this structure. Without `--fix`, output it as your fin
 ```
 # Adversarial review: <target>
 
+Tier: <light|full> (<from diff size | forced by --light | forced by --full>).
 Perspectives run: <list>. Skipped: <perspective — reason, or "none">.
 <If sequential fallback: note it here, including --model being ignored.>
 <If the manifest listed uncaptured untracked files: name each one as not covered by this review.>
@@ -167,7 +174,7 @@ Perspectives run: <list>. Skipped: <perspective — reason, or "none">.
 - <short title> (<perspective>) — <one-line refutation reason>
 ```
 
-If step 4 skipped every perspective, the report is the title line, the perspectives line, and one sentence stating that no perspective applied so nothing was reviewed — omit the count line, the findings section, and the rejected appendix, which only describe a review that ran.
+If step 4 skipped every perspective, the report is the title line, the tier and perspectives lines, and one sentence stating that no perspective applied so nothing was reviewed — omit the count line, the findings section, and the rejected appendix, which only describe a review that ran.
 
 Where the verifier corrected a severity, append *(severity corrected from X by verifier)* to that finding's title so the adjustment is visible. If every finding was confirmed, the appendix is the single line `- None — all findings survived verification.` If nothing was confirmed, say so plainly and still show the rejected appendix — it is the evidence the review actually looked.
 

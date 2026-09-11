@@ -39,6 +39,11 @@ run "$root"
 check "root commit exits 0" '[ $code -eq 0 ]'
 check "root commit scope mentions empty tree" '[[ "$out" == *"root commit"* ]]'
 check "root commit patch has a/ b/ prefixes despite noprefix config" 'grep -q "^+++ b/a.txt" "$(snapdir)/diff.patch"'
+check "size line counts files and lines" '[[ "$out" == *"size: 1 files, 1 lines changed (1 added, 0 deleted)"* ]]'
+check "small change is tier light" '[[ "$out" == *$'"'"'\ntier: light'"'"'* ]]'
+cleanup_snap
+REVIEW_LIGHT_MAX_LINES=0 run "$root"
+check "tier thresholds honor env overrides" '[ $code -eq 0 ] && [[ "$out" == *$'"'"'\ntier: full'"'"'* ]]'
 cleanup_snap
 
 # --- clean tree with commits ------------------------------------------------
@@ -74,6 +79,8 @@ check "nested untracked file captured with repo-relative path" 'grep -q "^+++ b/
 check "no uncaptured files reported" '[[ "$out" == *$'"'"'uncaptured untracked files:\nnone'"'"'* ]]'
 check "numstat lists untracked files" '[[ "$out" == *"sub/nested.txt"* ]]'
 check "manifest keeps non-ASCII name literal" '[[ "$out" == *"café.py"* ]]'
+check "binary file counts as a file with zero lines" '[[ "$out" == *"size: 8 files, 6 lines changed (6 added, 0 deleted)"* ]]'
+check "many files is tier full" '[[ "$out" == *$'"'"'\ntier: full'"'"'* ]]'
 check "git apply parses the frozen patch" 'git apply --numstat "$patch" >/dev/null'
 cleanup_snap
 

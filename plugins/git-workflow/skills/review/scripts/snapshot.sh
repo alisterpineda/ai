@@ -19,6 +19,11 @@
 # <dir>/uncaptured.txt when an untracked file could not be captured). Prints
 # a manifest on stdout and never prints the diff itself.
 #
+# The manifest's `tier:` line sizes the review: `light` when the change is at
+# most $REVIEW_LIGHT_MAX_FILES files (default 3) and $REVIEW_LIGHT_MAX_LINES
+# changed lines, added plus deleted (default 40); `full` otherwise. A binary
+# file counts as one file and zero lines.
+#
 # Exit codes: 0 snapshot ready · 2 argument error · 3 nothing to review ·
 #             1 unexpected failure
 
@@ -27,6 +32,8 @@ set -u
 die() { local code=$1; shift; printf 'snapshot: %s\n' "$*" >&2; exit "$code"; }
 
 snap_root="${REVIEW_SNAPSHOT_DIR:-${TMPDIR:-/tmp}}"
+light_max_files="${REVIEW_LIGHT_MAX_FILES:-3}"
+light_max_lines="${REVIEW_LIGHT_MAX_LINES:-40}"
 target=""
 have_target=0
 while [ $# -gt 0 ]; do
@@ -126,8 +133,21 @@ fi
 # git apply always parses it; if it ever does not, the snapshot is unusable.
 files=$("${git[@]}" apply --numstat "$patch") || { rm -rf "$snap"; die 1 "git apply could not parse $patch"; }
 
+# Size and tier from the same numstat. Binary rows carry "-" for both counts.
+read -r nfiles added deleted < <(printf '%s\n' "$files" | awk '
+  { n++; if ($1 != "-") a += $1; if ($2 != "-") d += $2 }
+  END { printf "%d %d %d\n", n, a, d }')
+lines=$((added + deleted))
+if [ "$nfiles" -le "$light_max_files" ] && [ "$lines" -le "$light_max_lines" ]; then
+  tier="light (at most $light_max_files files and $light_max_lines changed lines)"
+else
+  tier="full (over $light_max_files files or $light_max_lines changed lines)"
+fi
+
 printf 'snapshot: %s\n' "$snap"
 printf 'scope: %s\n' "$scope"
+printf 'size: %d files, %d lines changed (%d added, %d deleted)\n' "$nfiles" "$lines" "$added" "$deleted"
+printf 'tier: %s\n' "$tier"
 printf 'files (added\tdeleted\tpath; - for binary):\n%s\n' "$files"
 printf 'uncaptured untracked files:\n'
 if [ -s "$snap/uncaptured.txt" ]; then cat "$snap/uncaptured.txt"; else printf 'none\n'; fi
