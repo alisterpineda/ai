@@ -105,21 +105,21 @@ Build a short file map from the manifest's file table: which files changed, roug
 First fix the tier: `--light` or `--full` if given, otherwise the manifest's `tier:` line. The tier scales the review to the size of the change — a five-line fix does not warrant five reviewers each re-reading the same callers and callees.
 
 - **Full tier**: apply every criterion in the table below.
-- **Light tier**: run correctness, plus security if its criterion is met. Skip tests and maintainability — on a small diff their findings are mostly "add a test" and "consider extracting", which is not what a small review is for. The header lists them as skipped with the tier as the reason. A small change is not automatically a safe one: when the file map says the diff touches auth, money, migrations, or the like, the security criterion still fires, and `--full` is the override when the concern is broader than that.
+- **Light tier**: run correctness, plus security if its criterion is met. Skip tests and maintainability — on a small diff their findings are mostly "add a test" and "consider extracting", which is not what a small review is for. The header lists them as skipped with the tier as the reason. A small docs-only diff therefore costs exactly one reviewer, and its docs are checked for accuracy against the code rather than skipped. A small change is not automatically a safe one: when the file map says the diff touches auth, money, migrations, or the like, the security criterion still fires, and `--full` is the override when the concern is broader than that.
 
 Each perspective has a charter file in this skill's `references/` directory (resolve paths from this skill's base directory). Select using these criteria:
 
 | Perspective | Charter | Runs when |
 |---|---|---|
-| Correctness | `references/correctness.md` | Always, except pure docs/generated-file diffs (config still counts — a wrong value is a correctness bug). |
+| Correctness | `references/correctness.md` | Always, except pure generated-file diffs. Config counts — a wrong value is a correctness bug. Docs count — prose that describes code is a set of claims to check against it, and the charter covers that; a docs-only diff runs correctness alone. |
 | Security | `references/security.md` | The diff touches input handling, auth, network calls, shell/process execution, file paths, serialization, SQL/queries, secrets, or dependency/config changes. |
 | Tests | `references/tests.md` | Source logic changed (whether or not tests changed with it), or test files themselves changed. |
 | Performance | `references/performance.md` | The diff touches loops or recursion, database/network/file I/O, caching, concurrency, or code on a hot path (per-request, per-item, startup, UI). |
 | Maintainability | `references/maintainability.md` | Any non-trivial code change — skip only for pure docs/config/generated-file diffs. |
 
-"Docs" in these criteria means prose no agent executes — a README, a changelog, a comment-only edit. Files that are instructions an agent runs — `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, agent, command, rule, and prompt files — are logic, whatever their extension, and every criterion treats them as such.
+"Docs" in these criteria means prose no agent executes — a README, a changelog, a comment-only edit. Docs are never a reason to skip correctness, only the other perspectives: a docs-only diff gets one reviewer checking the prose against the code it describes, not zero. Files that are instructions an agent runs — `SKILL.md`, `CLAUDE.md`, `AGENTS.md`, agent, command, rule, and prompt files — are logic, whatever their extension, and every criterion treats them as such.
 
-Skipping is not silent: the report header lists which perspectives were skipped and why. In the full tier, when in doubt about a criterion, run the perspective — a wasted pass is cheaper than a missed vulnerability. In the light tier the tier decides; do not add perspectives back on a hunch, since the passes it removes are most of what a small review costs. If every perspective is skipped (a diff of nothing but docs or generated files), skip steps 5–7 and produce the header-only report defined in step 8.
+Skipping is not silent: the report header lists which perspectives were skipped and why. In the full tier, when in doubt about a criterion, run the perspective — a wasted pass is cheaper than a missed vulnerability. In the light tier the tier decides; do not add perspectives back on a hunch, since the passes it removes are most of what a small review costs. If every perspective is skipped (a diff of nothing but generated files), skip steps 5–7 and produce the header-only report defined in step 8.
 
 ## 5. Run the reviewers
 
