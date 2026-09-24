@@ -260,7 +260,7 @@ Two traps:
 - The stash entry is **not** dropped on a conflicted pop. Treat `git stash drop` as its own ask, or better, leave it.
 - Staging leaves the user's restored work **staged**, a state it was never in. Offer `git restore --staged -- <paths>` to undo that.
 
-On the merge commit message: keep the default generated one, it is conventional. `commit-message`'s no-attribution-trailers rule still applies; writing a custom message is that skill's job, not this one's.
+On the merge commit message: keep the default generated one, it is conventional. Writing a custom message is `commit-message`'s job, not this one's.
 
 ## 11. Loop
 
