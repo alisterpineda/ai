@@ -55,16 +55,26 @@ A short paragraph (2-4 sentences) that explains what this PR does and why. This 
 
 ### Changes
 
-A grouped, hierarchical bullet list of what changed. The structure is:
+A short bullet list for a reviewer about to open the diff, and for someone reading the PR months later. The diff carries the implementation detail; each bullet tells the reader what changed in behavior or capability.
 
-- **Top-level bullets** are logical groupings (by feature area, component, concern, etc.)
-  - **Nested bullets** are the specific changes within that group, with enough technical detail to be useful during code review
+**Selecting changes.** A change earns a bullet when a reviewer would be surprised not to be told about it, or would read the diff differently knowing it. Breaking changes, migrations, and required deploy steps always earn one — they affect people who never open the diff.
 
-Grouping guidelines:
-- Group by logical theme, not by file. Multiple file changes that serve the same purpose go under one group.
-- If there's only one logical group, still use the two-level structure — the top-level bullet names the area, nested bullets list the specifics.
-- Order groups by importance or logical flow, not alphabetically.
-- Use present-tense imperative mood for each bullet, matching the title style.
+**Sizing the list.** Size by the number of distinct concerns, not lines changed — a 2,000-line rename is one concern.
+
+| PR | Shape |
+|---|---|
+| One concern | 1–3 flat bullets |
+| 2–3 concerns | 3–6 flat bullets |
+| Several distinct areas | Grouped: 2–3 groups of 2–3 nested bullets, plus flat bullets for single-change areas |
+
+Hard cap at any size: 6 top-level bullets and 15 bullets in total, counting group headings. When the selected changes exceed it, describe them at a higher level, collapsing related changes into one bullet, until the list fits — and add the split note (see Output format).
+
+**Structure.** Write a flat list by default. Group only when several distinct areas each have more than one change worth a bullet: the top-level bullet names the area and the nested bullets give its changes. Areas with a single change sit alongside the groups as flat bullets. Order by importance or logical flow.
+
+**Wording.**
+- One sentence per bullet, describing one change, in present-tense imperative mood matching the title. Run to a second sentence only when a single sentence can't carry something critical, such as a breaking change's migration path.
+- Add the why as a short clause when the reason isn't obvious.
+- Name code only when the reader will type, call, configure, or search for it: endpoints, CLI flags, config keys, env vars, public API names, table and migration names.
 
 ## Output format
 
@@ -72,6 +82,7 @@ Present the result as:
 
 1. The **title** on its own line
 2. A **markdown codeblock** containing the formatted description
+3. **Only when the selected changes exceeded the hard cap:** one line after the codeblock, addressed to the user and not part of the PR, noting that the PR spans N separate concerns and could be split
 
 Like this:
 
@@ -86,17 +97,42 @@ Like this:
 
 ## Changes
 
-- <Group 1 name or theme>
-  - <Specific change>
-  - <Specific change with why, if the reason isn't obvious>
-- <Group 2 name or theme>
-  - <Specific change>
-  - <Specific change>
+- <Change>
+- <Change, with why if the reason isn't obvious>
+````
+
+A grouped list for a PR spanning several areas:
+
+````markdown
+- <Area>
+  - <Change>
+  - <Change>
+- <Area>
+  - <Change>
+  - <Change>
+- <Single change from another area>
 ````
 
 ## Examples
 
-**Example 1** — Feature addition:
+**Example 1** — Small (one concern):
+
+```
+Fix dark mode not persisting across page reloads
+```
+
+````markdown
+## Summary
+
+The dark mode toggle reset to light mode on every page reload because the component always initialized with the default value instead of reading the stored preference. The theme now loads from the saved preference, falling back to the operating system's color scheme when none is saved.
+
+## Changes
+
+- Restore the saved theme on page load instead of always starting in light mode
+- Fall back to the operating system's color scheme when no preference is saved
+````
+
+**Example 2** — Medium (2–3 concerns):
 
 ```
 Add cursor-based pagination to the user list API
@@ -109,60 +145,32 @@ Replaces the unbounded query in the user list endpoint with cursor-based paginat
 
 ## Changes
 
-- User list endpoint pagination
-  - Accept `cursor` and `limit` query parameters with a default limit of 50
-  - Return `next_cursor` in the response body for client-side iteration
-  - Replace unbounded SELECT with a keyset pagination query
-- Database indexing
-  - Add index on `users.created_at` to support cursor ordering without a full table scan
-- Client SDK updates
-  - Update `listUsers()` to accept pagination options and auto-paginate by default
-  - Add `iterateUsers()` async generator for streaming large result sets
+- Paginate the user list endpoint with `cursor` and `limit` parameters (default 50)
+- Add an index on `users.created_at` so paging doesn't scan the whole table
+- Auto-paginate in the SDK's `listUsers()` and add `iterateUsers()` for large result sets
 ````
 
-**Example 2** — Bug fix:
+**Example 3** — Large (several distinct areas):
 
 ```
-Fix dark mode toggle not persisting across page reloads
+Add SAML single sign-on for organization accounts
 ```
 
 ````markdown
 ## Summary
 
-The dark mode toggle was resetting to light mode on every page reload because the component always initialized with the default value instead of reading the stored preference. This also adds cross-tab synchronization so changing the theme in one tab reflects immediately in others.
+Lets organization admins set up SAML single sign-on so members log in through their company's identity provider instead of managing a separate password. Password login stays available unless an admin enforces SSO.
 
 ## Changes
 
-- Theme persistence
-  - Read saved preference from localStorage on component mount instead of hardcoding the default
-  - Fall back to the system `prefers-color-scheme` value when no saved preference exists
-- Cross-tab synchronization
-  - Add a `storage` event listener to sync toggle state when the preference changes in another tab
-- Theme tokens
-  - Replace scattered hardcoded hex values with light/dark color tokens defined in theme config
-````
-
-**Example 3** — Refactor spanning multiple areas:
-
-```
-Extract shared validation logic into a reusable middleware
-```
-
-````markdown
-## Summary
-
-Consolidates duplicated request validation logic from five route handlers into a single middleware. This reduces code duplication and ensures consistent error response formatting across all API endpoints.
-
-## Changes
-
-- Validation middleware
-  - Create `validateRequest` middleware that accepts a schema and returns 400 with structured errors on failure
-  - Support both body and query parameter validation via a `source` option
-- Route handler cleanup
-  - Remove inline validation from user, project, team, billing, and settings route handlers
-  - Wire each route to the shared middleware with its specific schema
-- Error response format
-  - Standardize all validation errors to return `{ errors: [{ field, message }] }` instead of the inconsistent formats each handler used previously
+- Login
+  - Add a SAML login flow at `/auth/saml/{org}` that creates accounts on first login for the org's verified domain
+  - Reject password login for orgs that enforce SSO, pointing users to their SSO login page
+- Admin settings
+  - Add an SSO page where admins upload their identity provider's metadata and test the connection
+  - Add an "Enforce SSO" toggle, available only after a successful test login
+- Add the `sso_connections` table and `orgs.sso_enforced` column — run the migration before deploying
+- Require a new `SAML_SP_PRIVATE_KEY` env var for signing SAML requests — set it before deploying
 ````
 
 ## What to leave out
@@ -172,3 +180,7 @@ Consolidates duplicated request validation logic from five route handlers into a
 - Don't describe intermediate states or back-and-forth changes — only the net result
 - Don't include commit hashes or refer to specific commits
 - Don't add boilerplate like "This PR..." at the start of the summary — just state what it does directly
+- Internal names (private functions, classes, variables) — describe what the code does instead
+- A group with a single nested bullet — write that change as one flat bullet
+- One bullet per mechanical edit (call-site updates, follow-on renames, test fixes) — fold them into the change they support
+- Nested bullets that restate their group heading — the heading names the area, the bullets say what changed
