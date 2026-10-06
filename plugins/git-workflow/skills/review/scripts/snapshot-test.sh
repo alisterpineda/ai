@@ -40,10 +40,23 @@ check "root commit exits 0" '[ $code -eq 0 ]'
 check "root commit scope mentions empty tree" '[[ "$out" == *"root commit"* ]]'
 check "root commit patch has a/ b/ prefixes despite noprefix config" 'grep -q "^+++ b/a.txt" "$(snapdir)/diff.patch"'
 check "size line counts files and lines" '[[ "$out" == *"size: 1 files, 1 lines changed (1 added, 0 deleted)"* ]]'
-check "small change is tier light" '[[ "$out" == *$'"'"'\ntier: light'"'"'* ]]'
+check "one-line change gets a budget of 1" '[[ "$out" == *$'"'"'\nbudget: 1 reviewer'"'"'* ]]'
+check "a small patch is read in full" '[[ "$out" == *$'"'"'\nread: yes ('"'"'* ]]'
+check "single commit logs its own message" '[[ "$out" == *"log: "*"(1 commits)"* ]] && grep -qx root "$(snapdir)/log.txt"'
 cleanup_snap
-REVIEW_LIGHT_MAX_LINES=0 run "$root"
-check "tier thresholds honor env overrides" '[ $code -eq 0 ] && [[ "$out" == *$'"'"'\ntier: full'"'"'* ]]'
+REVIEW_BUDGET_1_MAX_LINES=0 run "$root"
+check "budget thresholds honor env overrides" '[ $code -eq 0 ] && [[ "$out" == *$'"'"'\nbudget: 2 reviewers'"'"'* ]]'
+cleanup_snap
+REVIEW_BUDGET_1_MAX_LINES=0 REVIEW_BUDGET_2_MAX_LINES=0 run "$root"
+check "budget of 3 below the medium threshold" '[[ "$out" == *$'"'"'\nbudget: 3 reviewers'"'"'* ]]'
+cleanup_snap
+REVIEW_BUDGET_1_MAX_LINES=0 REVIEW_BUDGET_2_MAX_LINES=0 REVIEW_BUDGET_3_MAX_LINES=0 run "$root"
+check "unlimited budget above the medium threshold" '[[ "$out" == *$'"'"'\nbudget: unlimited'"'"'* ]]'
+cleanup_snap
+check "unlimited budget is never read in full" '[[ "$out" == *$'"'"'\nread: no (unlimited budget'"'"'* ]]'
+cleanup_snap
+REVIEW_READ_MAX_BYTES=1 run "$root"
+check "a patch over the byte cap keeps its budget but is not read" '[[ "$out" == *$'"'"'\nbudget: 1 reviewer'"'"'* ]] && [[ "$out" == *$'"'"'\nread: no (patch is '"'"'*", over 1)"* ]]'
 cleanup_snap
 
 # --- clean tree with commits ------------------------------------------------
@@ -55,6 +68,7 @@ printf 'x\n' > loose.txt
 run
 check "staged wins when anything is staged" '[ $code -eq 0 ] && [[ "$out" == *"scope: staged changes"* ]]'
 check "staged snapshot excludes untracked files" '! grep -q loose.txt "$(snapdir)/diff.patch"'
+check "staged changes have no log" '[[ "$out" == *"log: none"* ]] && [ ! -e "$(snapdir)/log.txt" ]'
 cleanup_snap
 git reset -q a.txt
 
@@ -80,8 +94,12 @@ check "no uncaptured files reported" '[[ "$out" == *$'"'"'uncaptured untracked f
 check "numstat lists untracked files" '[[ "$out" == *"sub/nested.txt"* ]]'
 check "manifest keeps non-ASCII name literal" '[[ "$out" == *"café.py"* ]]'
 check "binary file counts as a file with zero lines" '[[ "$out" == *"size: 8 files, 6 lines changed (6 added, 0 deleted)"* ]]'
-check "many files is tier full" '[[ "$out" == *$'"'"'\ntier: full'"'"'* ]]'
+check "a tiny change gets a budget of 1 however many files" '[[ "$out" == *$'"'"'\nbudget: 1 reviewer'"'"'* ]]'
+check "uncommitted changes have no log" '[[ "$out" == *"log: none"* ]] && [ ! -e "$(snapdir)/log.txt" ]'
 check "git apply parses the frozen patch" 'git apply --numstat "$patch" >/dev/null'
+cleanup_snap
+REVIEW_BUDGET_1_MAX_LINES=0 run
+check "over the file threshold skips the budget of 2" '[[ "$out" == *$'"'"'\nbudget: 3 reviewers'"'"'* ]]'
 cleanup_snap
 
 # same scope, run from a subdirectory: paths must stay repo-relative
@@ -137,6 +155,9 @@ git checkout -q feature
 run main
 check "branch name is a merge-base diff" '[ $code -eq 0 ] && [[ "$out" == *"relative to main"* ]]'
 check "merge-base diff excludes main's own commits" '! grep -q m.txt "$(snapdir)/diff.patch"'
+check "branch log holds the branch's commits only" 'grep -qx feat "$(snapdir)/log.txt" && ! grep -qx mainwork "$(snapdir)/log.txt"'
+check "manifest never contains diff hunks" '! printf "%s" "$out" | grep -q "^@@"'
+check "manifest never contains commit messages" '! printf "%s" "$out" | grep -qx feat'
 cleanup_snap
 
 git tag v1 main
@@ -151,20 +172,42 @@ cleanup_snap
 
 run "$feat"
 check "single commit reviews its own change" '[ $code -eq 0 ] && [[ "$out" == *"scope: commit"* ]] && grep -q "^+++ b/f.txt" "$(snapdir)/diff.patch"'
+check "non-root single commit logs only its own message" '[[ "$out" == *"(1 commits)"* ]] && grep -qx feat "$(snapdir)/log.txt" && ! grep -qx undots "$(snapdir)/log.txt" && ! grep -qx root "$(snapdir)/log.txt"'
 cleanup_snap
 
 run "main..feature"
 check "two-dot range accepted" '[ $code -eq 0 ] && [[ "$out" == *"scope: range main..feature"* ]]'
+check "two-dot range logs that range" 'grep -qx feat "$(snapdir)/log.txt" && ! grep -qx mainwork "$(snapdir)/log.txt"'
+cleanup_snap
+
+run "main...feature"
+check "three-dot range logs from the merge base" '[ $code -eq 0 ] && grep -qx feat "$(snapdir)/log.txt" && ! grep -qx mainwork "$(snapdir)/log.txt"'
+cleanup_snap
+
+REVIEW_LOG_MAX_COMMITS=0 run main
+check "log cap is reported in the manifest" '[[ "$out" == *"(1 commits; the newest 0 kept)"* ]]'
 cleanup_snap
 
 git checkout -q main
 git merge -q --no-ff feature -m merge
 run HEAD
 check "clean merge commit is non-empty against first parent" '[ $code -eq 0 ] && [[ "$out" == *"merge, against first parent"* ]] && grep -q "^+++ b/f.txt" "$(snapdir)/diff.patch"'
+check "merge log includes the merged commits" 'grep -qx merge "$(snapdir)/log.txt" && grep -qx feat "$(snapdir)/log.txt"'
+check "merge log excludes first-parent history" '! grep -qx mainwork "$(snapdir)/log.txt" && ! grep -qx root "$(snapdir)/log.txt"'
+check "log lists commits oldest first" '[ "$(grep -nx feat "$(snapdir)/log.txt" | cut -d: -f1)" -lt "$(grep -nx merge "$(snapdir)/log.txt" | cut -d: -f1)" ]'
+cleanup_snap
+REVIEW_LOG_MAX_COMMITS=1 run HEAD
+check "log cap keeps only the newest commits" '[[ "$out" == *"(2 commits; the newest 1 kept)"* ]] && [ "$(grep -c "^commit " "$(snapdir)/log.txt")" -eq 1 ] && grep -qx merge "$(snapdir)/log.txt" && ! grep -qx feat "$(snapdir)/log.txt"'
 cleanup_snap
 
 run main
 check "already-merged base exits 3" '[ $code -eq 3 ]'
+
+git checkout -q --orphan lone; git rm -rqf .
+printf 'o\n' > o.txt; git add o.txt; git commit -qm lone
+git checkout -q main
+run "main...lone"
+check "three-dot range without a merge base exits 2" '[ $code -eq 2 ] && [[ "$err" == *"no merge base"* ]]'
 
 # --- argument errors ----------------------------------------------------------
 run a.txt;        check "path target exits 2" '[ $code -eq 2 ] && [[ "$err" == *"paths are not supported"* ]]'
@@ -172,8 +215,6 @@ run nonesuch;     check "unknown target exits 2" '[ $code -eq 2 ]'
 run --fix;        check "option-looking target exits 2" '[ $code -eq 2 ]'
 run main feature; check "two targets exits 2" '[ $code -eq 2 ]'
 run "nope..main"; check "bad range exits 2" '[ $code -eq 2 ]'
-
-check "manifest never contains diff hunks" '! printf "%s" "$out" | grep -q "^@@"'
 
 printf '\n%d failure(s)\n' "$fails"
 [ "$fails" -eq 0 ]

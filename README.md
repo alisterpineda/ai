@@ -36,7 +36,7 @@ Git-related skills.
 |---|---|---|
 | `commit-message` | model-invoked | Commit staging discipline and message format conventions. |
 | `pr-description` | model-invoked | Generates PR titles and descriptions from a branch diff. |
-| `review` | **user-only**: `/git-workflow:review [--fix] [--model <name>] [target]` | Adversarial multi-perspective code review — parallel reviewer subagents (correctness, security, maintainability, tests, performance) plus a skeptic verification pass on every finding. Defaults to uncommitted changes; report-only unless `--fix` is passed. |
+| `review` | **user-only**: `/git-workflow:review [--full] [--model <name>] [target]` | Adversarial multi-perspective code review — parallel reviewer subagents (correctness, security, maintainability, tests, performance), sharpened by domain lenses (agent instructions, public API, migrations, frontend, infra/CI), plus a skeptic verification pass on every finding. Small diffs get fewer reviewers, with the remaining perspectives folded in; `--full` lifts that cap. Defaults to uncommitted changes; always report-only — apply fixes from the report in the main conversation. |
 | `conflict-triage` | **user-only**: `/git-workflow:conflict-triage [--fix] [target]` | Triages conflicts from a merge, rebase, cherry-pick, revert, or stash pop — or predicts them for a GitHub / Azure DevOps pull request — and reports a per-file resolution plan with its risks. Read-only unless `--fix` is passed. |
 
 ### publishing

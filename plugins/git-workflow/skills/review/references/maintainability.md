@@ -34,7 +34,7 @@ Your final message is only the findings, in this exact format (or the single lin
 ```
 ### [CRITICAL|MAJOR|MINOR] <short title>
 - Perspective: maintainability
-- Location: <file:line>
+- Location: <file:line> (in <enclosing function, class, or section>)
 - Confidence: <high|medium|low>
 - Defect: <one sentence>
 - Failure scenario: <what future task becomes harder/riskier, concretely>

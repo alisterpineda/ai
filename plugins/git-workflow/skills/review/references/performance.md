@@ -35,7 +35,7 @@ Your final message is only the findings, in this exact format (or the single lin
 ```
 ### [CRITICAL|MAJOR|MINOR] <short title>
 - Perspective: performance
-- Location: <file:line>
+- Location: <file:line> (in <enclosing function, class, or section>)
 - Confidence: <high|medium|low>
 - Defect: <one sentence>
 - Failure scenario: <scaling variable + realistic size → concrete cost: latency, memory, load>
