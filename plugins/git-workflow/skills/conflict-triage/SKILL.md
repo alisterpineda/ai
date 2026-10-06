@@ -64,10 +64,10 @@ ARGUMENTS: $ARGUMENTS
 
 ### What `--fix` grants — and what it does not
 
-`--fix` is explicit, up-front permission for the **mechanical forward path**: resolve, stage, continue, loop. It is not permission to guess. These still stop and ask, flag or no flag:
+`--fix` is explicit, up-front permission for the **mechanical forward path**: resolve, stage, continue, loop — and, on a rebase, creating the backup branch (step 7), which only adds a ref and is listed in the report beforehand. It is not permission to guess. These still stop and ask, flag or no flag:
 
 - **Genuinely ambiguous hunks** — competing logic in the same region, semantic conflicts, anything touching auth/permissions/money/crypto, migration ordering, delete/modify, submodules.
-- **Irreversible side-actions** — `git stash drop`, any `--abort`, and `git rm` of a path. Each keeps its own ask.
+- **Irreversible side-actions** — `git stash drop`, any `--abort`, `git rm` of a path, and deleting the backup branch. Each keeps its own ask.
 - **Pushing.** The skill never pushes, with or without `--fix`.
 
 Without `--fix`, Phase 2 does not run at all.
@@ -196,11 +196,13 @@ Per conflicted file: the conflict type, what each side did, the **proposed resol
 
 ## Escape hatch
 <the exact abort command for this operation, and what it does and does not restore>
+<rebase: the backup branch step 7 would create, and `git reset --keep "<backup>"` as the way back once the rebase has finished. Without --fix, print the `git branch` command so the user can make it before resolving by hand.>
 
 ## What Phase 2 would do
-1. …
-2. <the exact continue command, with GIT_EDITOR=true>
-3. <for a PR target: the exact push command the user would run afterwards>
+1. <rebase: create backup branch `<name>` at `<orig sha>`>
+2. …
+3. <the exact continue command, with GIT_EDITOR=true>
+4. <for a PR target: the exact push command the user would run afterwards>
 ```
 
 **Without `--fix`, stop here.** End with the one line that `--fix` re-runs this and carries the plan out. With `--fix`, continue.
@@ -209,7 +211,26 @@ Per conflicted file: the conflict type, what each side did, the **proposed resol
 
 # Phase 2 — Resolve (only with `--fix`)
 
-## 7. Resolve
+## 7. Back up the branch (rebase only)
+
+A rebase is the one operation here that strands the old commits once it finishes: from then on `git rebase --abort` is gone, and the user's force-push later removes the remote copy too. Before resolving anything — or, on a PR or branch target, before `git rebase` starts — pin the pre-rebase tip to a branch. Merge, cherry-pick, revert, stash pop, and `git am` get no backup; none of them leaves the old tip unreachable.
+
+`$orig` is the pre-rebase tip recorded in step 1 (`rebase-merge/orig-head` or `rebase-apply/orig-head`; on a PR or branch target, `HEAD` right before `git rebase`). `$branch` is `head-name` without `refs/heads/`, or `detached` when the rebase started from a detached HEAD. Sanitize it before use: branch names are attacker-controlled, and the backup name ends up in commands the user pastes.
+
+```sh
+branch="$(printf '%s' "$branch" | LC_ALL=C tr -c 'A-Za-z0-9._/-' '_')"   # strips $, (, `, ; etc. — a double-quoted paste would still expand them
+backup="conflict-triage/backup/$branch/$(git rev-parse --short=12 "$orig")"   # fixed length: default abbrev grows with the repo
+git check-ref-format --branch "$backup"
+existing="$(git rev-parse -q --verify "refs/heads/$backup")"
+[ -z "$existing" ] && git branch "$backup" "$orig"    # never -f
+```
+
+- **`$existing` is `$orig`** → reuse it. That is the expected case on every later stop of the same rebase, and on a re-run after a crash.
+- **`$existing` is any other commit, or `check-ref-format` / `git branch` fails** → stop and report. Never `-f`: an existing backup may be the only copy of something.
+
+`--fix` covers creating it. Deleting it never happens unasked — see step 13 and **Bailing out**.
+
+## 8. Resolve
 
 The goal is code that satisfies **both** intents, not a winner. Two sides changing different things inside one conflict region usually means keeping both — a side-picking resolution is right far less often than the marker layout suggests.
 
@@ -217,7 +238,7 @@ The goal is code that satisfies **both** intents, not a winner. Two sides changi
 - Stop and ask on the carve-outs listed under **What `--fix` grants**.
 - If *every* conflict is indentation or line-ending churn, don't hand-resolve it: abort and re-run the operation with `-Xignore-all-space` or `-Xrenormalize`.
 
-## 8. Verify
+## 9. Verify
 
 The primary gate is an explicit grep matching git's own marker grammar. Note `|||||||` — a zdiff3-style resolution can leave a base section behind:
 
@@ -233,13 +254,13 @@ The structural gate — the one that catches the no-marker cases — is that `gi
 
 Then: re-read each resolved file in full; run `git diff AUTO_MERGE` to see exactly what your resolution changed on top of git's own auto-merge; and run the project's build/test, discovered from what is actually present (`package.json`, `Makefile`, `justfile`, `Cargo.toml`, `pyproject.toml`, CI config). If nothing is discoverable, say so plainly rather than guessing at a command.
 
-## 9. Stage
+## 10. Stage
 
 By name, never wildcards.
 
 Delete/modify is the exception that needs a different verb: `git rm -- <path>` to accept the deletion, because `git add` cannot mark a deleted path resolved. It is destructive, so it gets its own ask.
 
-## 10. Continue
+## 11. Continue
 
 ```sh
 GIT_EDITOR=true git merge --continue
@@ -262,9 +283,9 @@ Two traps:
 
 On the merge commit message: keep the default generated one, it is conventional. Writing a custom message is `commit-message`'s job, not this one's.
 
-## 11. Loop
+## 12. Loop
 
-A rebase or a sequencer range stops **once per conflicting commit** — re-detect from step 1 and repeat the whole cycle.
+A rebase or a sequencer range stops **once per conflicting commit** — re-detect from step 1 and repeat the whole cycle. Step 7 finds its backup already at `$orig` and reuses it; one rebase gets one backup.
 
 Handle the **autostash tail**: `rebase.autoStash` / `merge.autostash` pops on completion, and *that* pop can conflict (`Applying autostash resulted in conflicts.`), landing back in the stash-pop branch of this skill with no operation in progress.
 
@@ -276,11 +297,23 @@ git range-diff <upstream> <pre-op-head> HEAD
 
 That is the best available proof the resolution didn't silently drop work.
 
-## 12. Close out
+## 13. Close out
 
 Report what actually happened per file versus what Phase 1 proposed, flagging every divergence — a resolution that changed under your hands is the thing the user most needs to see.
 
 **Stop before pushing.** Print the exact command instead. On the rebase path it must be `git push --force-with-lease`, never a plain `--force`.
+
+On the rebase path, close out the backup too:
+
+- **Name it and print the way back:** `git reset --keep "$backup"` on the rebased branch. `--keep` refuses rather than discarding uncommitted changes — the safe counterpart to the banned `--hard`.
+- **Ask whether to delete it, recommending keep** until the push is done and CI or review has passed — that is the window the backup exists for. Delete it now only on an explicit yes. Either way, print the delete command next to the push command:
+
+  ```sh
+  git update-ref -d "refs/heads/$backup" "$orig"
+  ```
+
+  It deletes only if the branch still points at `$orig`. `git branch -d` refuses here — the old commits are not in the rewritten branch — and `git branch -D` deletes whatever the branch points at *now*, including anything committed onto it since.
+- **Older backups:** if other `conflict-triage/backup/*` branches exist, say how many in one line and give `git branch --list 'conflict-triage/backup/*'`. Do not offer to delete them — this run cannot vouch for their history.
 
 ## Bailing out
 
@@ -296,6 +329,8 @@ State the abort command in the report *before* editing anything (step 6), and us
 
 Never `git reset --hard` as an escape from a stash pop — it destroys unrelated uncommitted work along with the conflict. Details per operation in `references/operations.md`.
 
+After a successful `git rebase --abort` of a rebase that started on a branch, the branch is back at `$orig` and the step 7 backup is a redundant copy. Ask separately — not folded into the abort ask — whether to delete it, using the same `git update-ref -d` form as step 13. If the rebase started from a detached HEAD (`$branch` is `detached`), no branch was restored: the backup may be the only ref to `$orig`. Say so, recommend keeping it, and do not offer to delete it.
+
 ## What to leave out
 
 - No `git mergetool` and no GUI tools.
@@ -303,5 +338,6 @@ Never `git reset --hard` as an escape from a stash pop — it destroys unrelated
 - No rewriting history to tidy up a resolution.
 - No touching files outside the conflict set (except what a build fix genuinely requires — and say so).
 - No dropping the stash unasked.
+- No deleting the backup branch unasked, and never with `git branch -D`.
 - No pushing, ever.
 - No editing anything at all in Phase 1.

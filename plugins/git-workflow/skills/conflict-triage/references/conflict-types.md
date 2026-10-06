@@ -187,4 +187,4 @@ The recurring shapes:
 - Both sides add an entry to the same registry/enum/config with the same key in different places.
 - One side adds a test that pins behavior the other side deliberately changed.
 
-The cheap detection is the project's build and test suite (skill step 8) plus a targeted grep for every identifier either side renamed. Say plainly in the report when the project offers no way to check this.
+The cheap detection is the project's build and test suite (skill step 9) plus a targeted grep for every identifier either side renamed. Say plainly in the report when the project offers no way to check this.

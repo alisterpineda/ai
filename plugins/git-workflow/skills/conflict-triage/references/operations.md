@@ -37,14 +37,16 @@ Useful files inside the state directories (read-only, all via `git rev-parse --g
 
 | Path | What it tells you |
 |---|---|
-| `rebase-merge/head-name` | The branch being rebased (`refs/heads/…`). |
+| `rebase-merge/head-name` | The branch being rebased (`refs/heads/…`), or `detached HEAD`. |
 | `rebase-merge/onto` | The commit being replayed onto — the "ours" side. |
-| `rebase-merge/orig-head` | The pre-rebase tip. Survives `ORIG_HEAD` being clobbered. |
+| `rebase-merge/orig-head` | The pre-rebase tip. Survives `ORIG_HEAD` being clobbered, and is what the step 7 backup branch points at. |
 | `rebase-merge/git-rebase-todo` | What is left to replay. |
 | `rebase-merge/done` | What has already been replayed. |
 | `rebase-merge/msgnum`, `end` | Progress: "commit N of M". |
 | `sequencer/todo` | Remaining cherry-pick/revert sequence. |
 | `MERGE_MSG` | The commit message git will use. |
+
+The apply backend keeps the same `head-name` and `orig-head` under `rebase-apply/`.
 
 `REBASE_HEAD`, `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD` are all readable with `git show` / `git log -1` for the subject line — use them to name the stopping commit in the report.
 
@@ -122,7 +124,7 @@ The operation itself completed — the state directories are gone, HEAD is where
 
 ### Rebase completed but HEAD looks detached
 
-During a rebase HEAD is detached by design; it reattaches to `head-name` on completion. A detached HEAD *after* the state directory is gone means the rebase ended abnormally (`--quit`, or a crash) — reconcile against `rebase-merge/orig-head` recorded in step 1 before doing anything else.
+During a rebase HEAD is detached by design; it reattaches to `head-name` on completion. A detached HEAD *after* the state directory is gone means the rebase ended abnormally (`--quit`, or a crash) — reconcile against `rebase-merge/orig-head` recorded in step 1 before doing anything else. If Phase 2 ran, the step 7 backup branch still points at that tip.
 
 ### rerere
 

@@ -190,6 +190,7 @@ Phase 1 never starts it. When `--fix` is set and the user is on the recommended 
 ```sh
 # Rebase path (user's own PR)
 git switch "$head"
+# back up "$head" at HEAD first — SKILL.md step 7
 git rebase "$base"
 
 # Merge path (someone else's PR)
@@ -213,4 +214,4 @@ git push --force-with-lease origin <head>
 git push origin <head>
 ```
 
-`--force-with-lease` refuses to overwrite a remote that moved since the last fetch; plain `--force` does not. Never print plain `--force`. If the head is a fork branch, the remote name is the fork's, not `origin` — say so explicitly rather than printing a command that pushes to the wrong place.
+`--force-with-lease` refuses to overwrite a remote that moved since the last fetch; plain `--force` does not. Never print plain `--force`. On the rebase path, print the backup branch's delete command beside it (SKILL.md step 13). If the head is a fork branch, the remote name is the fork's, not `origin` — say so explicitly rather than printing a command that pushes to the wrong place.
