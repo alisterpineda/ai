@@ -40,51 +40,65 @@ The working tree often contains changes unrelated to the current task — manual
 
 ### Message body
 
+The body is for someone who reaches this commit through `git blame`, `git bisect`, or `git log -S`: they are already looking at the code and want to know what the change does and why. The diff carries the implementation.
+
 - **Omit the body when the title says it all.** A typo fix, a one-line config change, or a rename needs no bullets. A body that only restates the title is noise.
-- Otherwise, separate the body from the title with a blank line
-- Use **bullet points** (` - ` prefix), one idea per bullet
-- Include **technical detail** — mention specific implementations, parameters, data structures, queries, etc.
-- When it adds value, explain **why** a change was made, not just what. This is preferred but not mandatory for every bullet — use judgment. If the reason is obvious, just state the what.
-- Wrap lines at ~72 characters for readability in terminals
+- **Select changes.** A change earns a bullet when that reader would want to know it before opening the diff, or would misread the diff without it. Breaking changes, migrations, and required deploy steps always earn one. Fold mechanical edits — call-site updates, follow-on renames, renumbering, test fixes, version bumps — into the change they support.
+- **Size the body to the change.** A small fix gets a bullet or two; a larger change gets more. Collapse related changes into one bullet so the count tracks distinct changes, not files or lines touched.
+- **Write flat bullets by default.** A commit usually holds one concern (see "Split unrelated work"), which a flat list covers. Group only when the change spans several distinct areas that each have more than one change worth a bullet: the top-level bullet names the area and nested bullets give its changes, while single-change areas sit alongside as flat bullets.
+- **One sentence per bullet**, describing one change in present-tense imperative mood, matching the title. Run to a second sentence only when one can't carry something critical, such as a breaking change's migration path.
+- Add the **why** as a short clause when the reason isn't obvious.
+- **Name the code a reader would search history for** — functions, parameters, config keys, tables, values that drove a decision. Describe what the diff already shows plainly in a few words, or not at all.
+- Separate the body from the title with a blank line, use bullet points (` - ` prefix), and wrap lines at ~72 characters for readability in terminals
 - No emoji
 
 ### Examples
 
-**Example 1** — Refactoring with a why-oriented title:
+**Example 1** — Why-oriented title, two bullets:
 ```
 Paginate user list endpoint to fix memory issues on large datasets
 
-- Replace unbounded SELECT query with cursor-based pagination
-  to prevent OOM on large datasets
-- Accept `cursor` and `limit` query params, default limit to 50
-- Return `next_cursor` in response body for client iteration
-- Add index on `created_at` to support cursor ordering efficiently
+- Replace the unbounded query with cursor pagination (`cursor` and
+  `limit` params, default 50, `next_cursor` in the response)
+- Add an index on `users.created_at` so paging doesn't scan the table
 ```
 
-**Example 2** — Bug fix with technical body:
+**Example 2** — Bug fix, one bullet carrying the cause:
 ```
-Fix toggle state not persisting across page reloads
+Fix dark mode not persisting across page reloads
 
-- Read saved theme preference from localStorage on component mount
-  instead of defaulting to light mode every time
-- Add useEffect hook to sync toggle state when preference changes
-  in another tab via the storage event
-- Fall back to system preference via prefers-color-scheme when
-  no saved preference exists
+- Read the saved theme on mount instead of always starting in light
+  mode, falling back to `prefers-color-scheme` when none is saved
 ```
 
-**Example 3** — New feature with balanced what/why bullets:
+**Example 3** — Change touching many files, with a breaking step:
 ```
-Add dark mode support and fix settings persistence
+Apply the upload size limit to all attachment types
 
-- Add dark mode toggle with system preference detection so users
-  get a sensible default without manual configuration
-- Define light/dark color tokens in theme config to replace
-  hardcoded hex values scattered across components
-- Persist preference in localStorage so it survives page reloads
+- Rename `MAX_IMAGE_UPLOAD_MB` to `MAX_ATTACHMENT_MB` and enforce it
+  for documents and video, which previously had no limit
+- Rename the env var in each deployment before upgrading; the old
+  name is no longer read
 ```
 
-**Example 4** — Self-explanatory change, title only:
+**Example 4** — One concern spanning several areas, grouped:
+```
+Add SAML single sign-on for organization accounts
+
+- Login
+  - Add a SAML flow at `/auth/saml/{org}` that creates accounts on
+    first login for the org's verified domain
+  - Reject password login for orgs with `sso_enforced` set
+- Admin settings
+  - Add an SSO page for uploading identity provider metadata and
+    testing the connection
+  - Allow enforcing SSO only after a successful test login, so an
+    admin can't lock the whole org out
+- Add the `sso_connections` table and `orgs.sso_enforced` column;
+  run the migration before deploying
+```
+
+**Example 5** — Self-explanatory change, title only:
 ```
 Fix typo in onboarding email subject line
 ```
