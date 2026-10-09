@@ -28,6 +28,14 @@ Codex CLI (≥ 0.146.0) supports Claude Code plugin marketplaces — use `/plugi
 
 ## Plugins
 
+### cc
+
+Claude Code-only customizations (no Copilot or Codex equivalent).
+
+| Skill | Invocation | What it does |
+|---|---|---|
+| `install-statusline` | **user-only**: `/cc:install-statusline` | Installs a status line showing model and effort, context usage, 5h/7d rate-limit usage (green when under pace) with reset countdowns, and the session name. Copies the script into `~/.claude` and points `settings.json` at it, backing up anything it replaces and asking before overwriting a status line or script it didn't install. Re-run after a plugin update to pick up changes. macOS/Linux need `jq`; Windows uses a PowerShell port and needs nothing extra. |
+
 ### git-workflow
 
 Git-related skills.

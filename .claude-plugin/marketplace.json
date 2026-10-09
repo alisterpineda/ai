@@ -9,6 +9,10 @@
   },
   "plugins": [
     {
+      "name": "cc",
+      "source": "./plugins/cc"
+    },
+    {
       "name": "git-workflow",
       "source": "./plugins/git-workflow"
     },

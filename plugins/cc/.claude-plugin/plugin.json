@@ -1,0 +1,9 @@
+{
+  "name": "cc",
+  "version": "0.1.0",
+  "description": "Claude Code-specific customizations: a status line showing model, effort, context usage, and 5h/7d rate-limit pace, with a user-invoked installer for macOS, Linux, and Windows.",
+  "author": {
+    "name": "Alister Pineda",
+    "email": "alister@alisterpineda.com"
+  }
+}
