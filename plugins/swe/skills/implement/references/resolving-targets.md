@@ -36,7 +36,7 @@ Work-item fields arrive as HTML. Read through the markup; the acceptance-criteri
 
 ## Children and linked items
 
-The target is the unit of work for this run. A ticket's child tasks, sub-issues, or task-list checkboxes are context, not automatically scope. Decide from their content: children that merely decompose the target's own acceptance criteria are already covered; children that add distinct requirements are a scope question. Put scope questions to the user once, in step 5 of the skill, together with any other scope questions. Linked items that are blocked-by or related are read for context only.
+The target is the unit of work for this run. A ticket's child tasks, sub-issues, or task-list checkboxes are context, not automatically scope. Decide from their content: children that merely decompose the target's own acceptance criteria are already covered; children that add distinct requirements are a scope question. Put scope questions to the user once, in step 4 of the skill, together with any other scope questions. Linked items that are blocked-by or related are read for context only.
 
 ## Echo
 

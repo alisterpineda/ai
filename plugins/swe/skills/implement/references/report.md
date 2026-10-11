@@ -7,6 +7,7 @@ The report is the run's final message and must stand on its own for someone who 
 
 Mode: direct | delegated (<n> phases, implementer model: <name or "inherited">).
 Scratch: <absolute path>
+<Branch: "<name> — created from <base>", "<name> — switched to existing", "<name> — created tracking <remote>/<name>", or "<name> — already on it, no change"; append "; name chosen by this run" when the target named none. Omit when the target prescribed no branch.>
 <Retries or takeovers: "Phase 3 retried once; phase 5 implemented by orchestrator after two failures." — or omit the line.>
 <Files already dirty at start, one line, or omit.>
 <Notes from the run: --model rejected by host, no subagent tool available, no test infrastructure, etc. — or omit.>
@@ -41,7 +42,7 @@ Scratch: <absolute path>
 
 ## Next step
 
-The working tree holds the implementation, uncommitted and unstaged. Review it with `/git-workflow:review`, then commit. Nothing in this run changed git state.
+The working tree holds the implementation, uncommitted and unstaged. Review it with `/git-workflow:review`, then commit. Nothing in this run changed git state<, apart from the branch above — when one was set up>.
 ```
 
 ## Rules

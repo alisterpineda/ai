@@ -24,9 +24,9 @@ Paths below are relative to this skill's directory; resolve them from wherever t
 
 ## Invariants
 
-- **The plan is closed.** Take the spec as written. When it is ambiguous, choose the most conservative reading, build that, and flag the choice in the report. When it contradicts itself, halt before writing code and report the contradiction as your final message. Design questions to the user never happen. **Scope questions** — what is in this session — are allowed once, in step 5, before any code exists.
-- **No git state changes.** Never stage, commit, stash, switch branches, or create worktrees. Never write to GitHub or Azure DevOps. The working tree is the only thing you change.
-- **Criteria drive everything.** The numbered acceptance-criteria list from step 5 is what phases are cut from, what tests are written against, and what the final verification walks. A criterion that never got written down never gets verified.
+- **The plan is closed.** Take the spec as written. When it is ambiguous, choose the most conservative reading, build that, and flag the choice in the report. When it contradicts itself, halt before writing code and report the contradiction as your final message. Design questions to the user never happen. **Scope questions** — what is in this session — are allowed once, in step 4, before any code exists.
+- **No git state changes.** Never stage, commit, stash, or create worktrees. Never write to GitHub or Azure DevOps. The working tree is the only thing you change. The one exception is a branch the target prescribes: step 5 creates or switches to it, once, before the snapshot. Never change branches on your own initiative or at any other point.
+- **Criteria drive everything.** The numbered acceptance-criteria list from step 4 is what phases are cut from, what tests are written against, and what the final verification walks. A criterion that never got written down never gets verified.
 - **No unit of work is dropped.** If a subagent fails, hangs, or returns nothing, the retry rules in step 6 apply; work never silently disappears from the run.
 
 ## 1. Parse arguments
@@ -59,15 +59,7 @@ Read `references/resolving-targets.md` and follow it. Classifying the argument i
 
 Completion criterion: the target's full text is in your context, and you have echoed a one-line `Implementing: <title> (<kind>: <ref>)` to the user. Do that echo before anything else happens, so a wrong resolution is visible in the first line of output.
 
-## 4. Snapshot the start state
-
-```
-bash <skill-dir>/scripts/snapshot.sh start --scratch <scratch-dir>
-```
-
-It records the working tree, including untracked files, as a git tree object without touching the index, and prints the snapshot directory, the tree id, and every file that was already modified or untracked. Keep the `snapshot:` path; step 7 diffs against it. A dirty tree is fine — that is why the snapshot exists — but list the pre-existing dirty files in the report header so nobody mistakes them for your work.
-
-## 5. Derive the acceptance criteria
+## 4. Derive the acceptance criteria
 
 Read the target closely and write `<scratch>/criteria.md`: a numbered list where each item is one observable behaviour the finished work must have. Take explicit acceptance criteria verbatim when the target has them; derive the rest from the description, comments, and discussion. Each criterion must be checkable by a test or by reading a specific part of the code — "works correctly" is not a criterion, "returns 404 for an unknown id" is.
 
@@ -76,6 +68,26 @@ Print the list to the user. This is not an approval gate; it is the run stating 
 This is the one point where you may ask the user, and only about **scope**: whether child items or linked tickets are part of this run, whether a section that already appears implemented should be redone, which of two spec files is authoritative. Ask everything at once, wait, then continue. If the target contradicts itself in a way that no conservative reading resolves, stop here and report the contradiction instead.
 
 Completion criterion: every requirement in the target maps to at least one criterion, and no criterion exists that the target does not support.
+
+## 5. Branch and snapshot the start state
+
+**Branch, if the target says so.** When the target prescribes a branch to do the work on ("work on `feat/x`", "branch off `main` as `fix/y`"), get onto it now. That comes after the criteria step, so a halt there leaves the checkout untouched, and before the snapshot, so the snapshot and every later diff belong to that branch. Look the name up in local branches and in remote-tracking branches (`git branch -a --list '<name>' '*/<name>'`); a branch on a remote exists even when it has no local copy yet:
+
+- Already on it: nothing to do.
+- Exists locally: `git switch <name>`.
+- Exists only on a remote: `git switch --track <remote>/<name>`, which creates the local branch on the remote's history. When several remotes have it, use the one the target names, else `origin`. Never use `-c` here; that would start an unrelated branch from the current HEAD.
+- Exists nowhere: `git switch -c <name> [<base>]`, with the base only if the target names one.
+- The target asks for a branch but names none: pick a name that follows the repo's existing branch names, flag the choice in the report, then apply the cases above.
+
+If git refuses the switch (a dirty tree would be overwritten, or the base does not exist), halt and report the refusal as your final message. Never stash, force, or discard changes to get past it. A target that mentions no branch leaves you on the current one.
+
+**Snapshot.**
+
+```
+bash <skill-dir>/scripts/snapshot.sh start --scratch <scratch-dir>
+```
+
+It records the working tree, including untracked files, as a git tree object without touching the index, and prints the snapshot directory, the tree id, and every file that was already modified or untracked. Keep the `snapshot:` path; step 7 diffs against it. A dirty tree is fine — that is why the snapshot exists — but list the pre-existing dirty files in the report header so nobody mistakes them for your work.
 
 ## 6. Implement
 
@@ -112,7 +124,7 @@ Verification is yours alone, on whichever model you started with. Do not delegat
    ```
    bash <skill-dir>/scripts/snapshot.sh diff <snapshot-dir>
    ```
-   This is exactly what changed since step 4, new files included, with pre-existing dirt excluded.
+   This is exactly what changed since step 5, new files included, with pre-existing dirt excluded.
 2. Run the project's typecheck, lint, and **full** test suite once, from whatever the repo itself defines (package scripts, Makefile, CI config). Record each command and its result.
 3. Walk `criteria.md`. For every criterion, find the test that proves it or the code that implements it, and mark it **pass**, **fail**, or **verified by inspection** (no test could exist, per test-first.md, so you read the code). A criterion with a green test you did not read is not yet a pass.
 4. Walk the diff hunk by hunk. Every hunk traces to a criterion or to what a criterion needed (a helper, a type, a fixture). Hunks that trace to nothing are **untraceable** — record them with file and line. Flag them; never revert them.
@@ -124,4 +136,4 @@ Completion criterion: every criterion has a verdict, every hunk is traced or fla
 
 ## 8. Report
 
-Compose the report using the template in `references/report.md` and send it as your final message. It ends with the hand-off: the working tree is uncommitted and unstaged, ready for `/git-workflow:review` and then a commit. Nothing in this run touches git state, so that step is the user's.
+Compose the report using the template in `references/report.md` and send it as your final message. It ends with the hand-off: the working tree is uncommitted and unstaged, ready for `/git-workflow:review` and then a commit. Apart from any branch the target prescribed, nothing in this run touches git state, so that step is the user's.
