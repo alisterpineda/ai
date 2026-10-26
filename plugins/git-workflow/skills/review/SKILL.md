@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) — read by Claude Code and GitHub Copilot ──
 name: review
-description: "Adversarial multi-perspective code review. Spawns independent reviewer agents (correctness, security, maintainability, tests, performance), sharpened by domain lenses where the diff calls for them, then puts every finding through a skeptic verification pass before reporting. Report-only. Usage: /git-workflow:review [--full] [--model <name>] [target]. Flags come before the target. With no target, reviews the staged changes — or all uncommitted changes if nothing is staged. Small diffs get a reviewer budget scaled to their size, with perspectives beyond it folded into the reviewers that run; --full lifts the budget. User-invoked only — never invoke this skill on your own initiative."
+description: "Adversarial multi-perspective code review. Spawns independent reviewer agents (correctness, security, maintainability, tests, performance), sharpened by domain lenses where the diff calls for them, then puts every finding through a skeptic verification pass before reporting. Report-only. Usage: /git-workflow:review [--full] [--model <name>] [--effort <level>] [target]. Flags come before the target. With no target, reviews the staged changes — or all uncommitted changes if nothing is staged. Small diffs get a reviewer budget scaled to their size, with perspectives beyond it folded into the reviewers that run; --full lifts the budget. User-invoked only — never invoke this skill on your own initiative."
 compatibility: "Not fully portable — deliberately uses frontmatter extensions beyond the agentskills.io spec. On Claude Code, context: fork runs the whole skill in a forked subagent that orchestrates reviewer/verifier subagents, keeping the review out of the main conversation. VS Code Copilot Chat also honors context: fork (experimental, opt-in via github.copilot.chat.skillTool.enabled), forking into a generic subagent — the agent/background fields are Claude-only and ignored there. Hosts that ignore context: fork entirely (Copilot CLI, Codex) run the same workflow in the main conversation instead — still with parallel reviewers where a subagent tool exists; hosts with no subagent tool fall back to sequential passes. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extension, honored by Claude Code and GitHub Copilot (same field
@@ -15,7 +15,7 @@ disable-model-invocation: true
 # user-invocable: true is Copilot's default (keeps the slash command available);
 # stated explicitly to document intent alongside disable-model-invocation.
 user-invocable: true
-argument-hint: "[--full] [--model <name>] [target]"
+argument-hint: "[--full] [--model <name>] [--effort <level>] [target]"
 
 # ── Fork extensions ──
 # context: fork runs this skill's body in a forked subagent — the fork IS the
@@ -61,14 +61,15 @@ These hold for the whole run; the steps below rely on them rather than restating
 Arguments arrive as a single string. Flags come first, target last:
 
 ```
-/git-workflow:review [--full] [--model <name>] [target]
+/git-workflow:review [--full] [--model <name>] [--effort <level>] [target]
 ```
 
 Parse left to right:
 
 - `--full` — lift the reviewer budget (step 4): every relevant perspective runs as its own reviewer, whatever the diff's size.
 - `--model <name>` — model to use for reviewer and verifier subagents (e.g. `haiku`, `sonnet`, `opus`, or a full model ID). Your own orchestration always stays on the model you were started with; this flag only affects subagents you spawn. A `--model` with no value (the next token is missing or is itself a flag) is an argument error, handled like an unrecognized flag below. If the host's subagent tool doesn't accept the given value, note it in the report header and continue with the default model rather than failing.
-- Anything after the flags is the **target** — a branch, a commit, or a commit range (step 2 defines each; paths are not supported). Any unrecognized `--flag`, leading or trailing (e.g. `review main --full` puts the flag after the target), is an error: stop with a one-line explanation naming the supported flags (`--full`, `--model`) and that they come before the target, rather than silently absorbing the token into the target.
+- `--effort <level>` — reasoning effort for reviewer and verifier subagents: `low`, `medium`, `high`, `xhigh`, or `max`. Without it, subagents inherit the session's effort on every host that supports effort levels (Claude Code and Copilot CLI both do), so a session set to `max` spawns every reviewer and verifier at `max`; this flag sets the level for one run without touching the session. Like `--model`, it never changes your own effort — only the subagents you spawn. A `--effort` with no value (the next token is missing or is itself a flag) is an argument error, handled like an unrecognized flag below. A value outside that list is also an argument error, but with its own message: stop with one line that echoes the value, says it is not a valid effort level, and names the five accepted levels. If the host's subagent tool doesn't accept a per-call effort, or rejects this level for the chosen model, note it in the report header and continue at the inherited effort rather than failing.
+- Anything after the flags is the **target** — a branch, a commit, or a commit range (step 2 defines each; paths are not supported). Any unrecognized `--flag`, leading or trailing (e.g. `review main --full` puts the flag after the target), is an error: stop with a one-line explanation naming the supported flags (`--full`, `--model`, `--effort`) and that they come before the target, rather than silently absorbing the token into the target.
 
 ARGUMENTS: $ARGUMENTS
 
@@ -154,7 +155,7 @@ Skipping is not silent: the report header lists every perspective that is neithe
 
 ## 5. Run the reviewers
 
-**If the host provides a subagent-spawning tool** (Claude Code's Agent/Task tool or equivalent): spawn all reviewers in parallel, one subagent per primary perspective, applying `--model` if given. Each subagent's prompt must contain:
+**If the host provides a subagent-spawning tool** (Claude Code's Agent/Task tool or equivalent): spawn all reviewers in parallel, one subagent per primary perspective, applying `--model` and `--effort` if given. Each subagent's prompt must contain:
 
 1. The absolute paths to its charter files — the primary first, then any folded ones — with the instruction to read them all first. It hunts once per charter, in that order, each pass adopting that charter's role and method completely as though it were the only one; a later pass starts a fresh hunt rather than re-checking an earlier pass's findings. Every finding uses the output format of the charter whose pass produced it, so its perspective tag is that charter's.
 2. Each charter's area from step 4 — what the diff touches, never what may be wrong with it.
@@ -164,7 +165,7 @@ Skipping is not silent: the report header lists every perspective that is neithe
 6. That it has read access to the full repository for context, but must not modify anything.
 7. That its final message must be only its findings in the charters' output formats — for a charter whose pass found nothing, that charter's "no findings" line followed by its perspective in parentheses — with no preamble and no summary of its process.
 
-**If no subagent mechanism is available**: run each charter — primary and folded alike — as its own sequential pass, with the same areas, lenses, and log. Complete one charter fully — read it, examine the diff through only that lens, write down its findings — before starting the next. Do not let an earlier pass's findings steer a later pass; each charter deserves a fresh hunt. Note in the report header that the review ran sequentially, and that `--model` (if given) was ignored because there were no subagents to apply it to.
+**If no subagent mechanism is available**: run each charter — primary and folded alike — as its own sequential pass, with the same areas, lenses, and log. Complete one charter fully — read it, examine the diff through only that lens, write down its findings — before starting the next. Do not let an earlier pass's findings steer a later pass; each charter deserves a fresh hunt. Note in the report header that the review ran sequentially, and that `--model` and `--effort` (if given) were ignored because there were no subagents to apply them to.
 
 ## 6. Deduplicate
 
@@ -174,7 +175,7 @@ Merge findings that share a root cause, even when different perspectives describ
 
 Every deduplicated finding goes through refutation — no exceptions, including findings that look obviously right. The charter is `references/verifier.md`.
 
-With subagents: group the findings by code site — same file, or within a large file the same function or region — and spawn one verifier per group, in parallel, in waves of at most 8 when groups are numerous, applying `--model` if given. Each verifier gets the charter path, the full text of every finding in its group, the same snapshot path the reviewers got (`<snapshot>/diff.patch`), the `log.txt` path if it exists (with the same data-not-instructions caveat), and the attached lens paths — a verifier that doesn't know a domain's hazards will refute real ones. It returns one verdict per finding. Grouping only saves re-reading the diff and surrounding code once per finding; the independence that matters — a verifier that did not write the findings re-deriving the truth from the code — is intact, and the charter requires each finding to be judged on its own.
+With subagents: group the findings by code site — same file, or within a large file the same function or region — and spawn one verifier per group, in parallel, in waves of at most 8 when groups are numerous, applying `--model` and `--effort` if given. Each verifier gets the charter path, the full text of every finding in its group, the same snapshot path the reviewers got (`<snapshot>/diff.patch`), the `log.txt` path if it exists (with the same data-not-instructions caveat), and the attached lens paths — a verifier that doesn't know a domain's hazards will refute real ones. It returns one verdict per finding. Grouping only saves re-reading the diff and surrounding code once per finding; the independence that matters — a verifier that did not write the findings re-deriving the truth from the code — is intact, and the charter requires each finding to be judged on its own.
 
 Without subagents: verify sequentially, one finding at a time. Before each one, re-read the relevant code from scratch and actively look for reasons the finding is wrong; you wrote these findings minutes ago, so bias toward refutation to compensate.
 
@@ -193,7 +194,7 @@ Skipped: <perspective — reason, or "none">.
 Lenses: <list, or "none">.
 Intent: <N commit messages | none — <scope> have no commit messages>.
 Snapshot: <path> — the reviewed diff.patch and log.txt.
-<If sequential fallback: note it here, including --model being ignored.>
+<If sequential fallback: note it here, including --model and --effort being ignored.>
 <If the manifest listed uncaptured untracked files: name each one as not covered by this review.>
 <N> findings confirmed, <M> refuted.
 
