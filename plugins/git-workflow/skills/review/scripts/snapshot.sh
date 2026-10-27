@@ -27,6 +27,10 @@
 # files (default 3) and $REVIEW_BUDGET_2_MAX_LINES lines (default 40); 3 up to
 # $REVIEW_BUDGET_3_MAX_LINES (default 300); unlimited above that. A binary
 # file counts as one file and zero lines.
+# Under a numbered budget the review folds every relevant perspective beyond
+# the cap into the reviewers that do run (SKILL.md step 4), which is only sound
+# while such diffs stay small enough for one reader to hold whole — keep that
+# in mind before raising these thresholds.
 #
 # The manifest's `read:` line says whether the orchestrator should read the
 # patch in full to choose perspectives: yes for a numbered budget, unless the
