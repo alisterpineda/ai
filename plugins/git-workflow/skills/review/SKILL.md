@@ -20,7 +20,9 @@ argument-hint: "[--full] [--model <name>] [--effort <level>] [target]"
 # review orchestrator. Unlike the Agent tool's "fork" subagent type, a skill
 # fork starts with a FRESH context: the body is its entire prompt and it has no
 # access to the conversation history, which is why this file is written
-# self-contained.
+# self-contained. No agent field is set: Claude Code then forks into its
+# general-purpose subagent, which has the Agent tool this workflow needs to
+# spawn reviewers.
 # background: true (the default, stated to document intent) runs the fork as a
 # background agent, matching the built-in /code-review: the invocation returns
 # immediately, the conversation stays usable while the review runs, and the
@@ -29,12 +31,11 @@ argument-hint: "[--full] [--model <name>] [--effort <level>] [target]"
 # reviewers; on a host that withholds it, step 5's sequential fallback applies.
 # The review never edits files: fixes happen afterwards in the main
 # conversation, which acts on the report.
-# Per host: Claude Code honors all three fields. VS Code Copilot Chat honors
+# Per host: Claude Code honors both fields. VS Code Copilot Chat honors
 # context: fork experimentally (opt-in via github.copilot.chat.skillTool.enabled),
-# forking into a generic subagent, and ignores agent/background. Copilot CLI and
-# Codex ignore all three and run the body inline.
+# forking into a generic subagent, and ignores background. Copilot CLI and
+# Codex ignore both and run the body inline.
 context: fork
-agent: general-purpose
 background: true
 ---
 
