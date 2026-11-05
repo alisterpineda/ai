@@ -13,6 +13,10 @@
       "source": "./plugins/cc"
     },
     {
+      "name": "core",
+      "source": "./plugins/core"
+    },
+    {
       "name": "git-workflow",
       "source": "./plugins/git-workflow"
     },

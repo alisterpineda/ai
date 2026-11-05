@@ -1,10 +1,13 @@
 {
   "name": "swe",
-  "version": "0.3.0",
-  "description": "Software-engineering workflow skills: implement a spec or ticket end-to-end, optionally delegating phases to cheaper subagents, with orchestrator-side verification against the acceptance criteria.",
+  "version": "1.0.0",
+  "description": "Software-engineering workflow skills: turn a design conversation into a spec file with decisions, acceptance criteria, and open questions.",
   "author": {
     "name": "Alister Pineda",
     "email": "alister@alisterpineda.com"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": [
+    "core"
+  ]
 }

@@ -7,7 +7,7 @@ Personal plugin marketplace for AI coding-agent customizations (skills, hooks, a
 - `.claude-plugin/marketplace.json` — marketplace manifest (`alisterpineda-ai`). Every plugin must be listed here with `name` + `source` (relative path under `./plugins`).
 - `plugins/<plugin-name>/` — one directory per plugin.
 - `README.md` — install instructions per tool.
-- `scripts/check-manifests.py` — checks every plugin's Agent Plugins 1.0 conformance: the root manifest against the schema its `$schema` names (fetched at run time, so it needs network) and against the Claude manifest, the Copilot layout, and skill frontmatter limits. Its `CLAUDE_ONLY` set lists the plugins exempt from carrying a root manifest. Run with `uv run scripts/check-manifests.py`.
+- `scripts/check-manifests.py` — checks every plugin's Agent Plugins 1.0 conformance: the root manifest against the schema its `$schema` names (fetched at run time, so it needs network) and against the Claude manifest, the Copilot layout, and skill frontmatter limits. It also fails any `.claude-plugin/plugin.json` `dependencies` entry that names a plugin missing from this marketplace. Its `CLAUDE_ONLY` set lists the plugins exempt from carrying a root manifest. Run with `uv run scripts/check-manifests.py`.
 
 ## Plugin skeleton
 

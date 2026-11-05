@@ -36,6 +36,14 @@ Claude Code-only customizations (no Copilot or Codex equivalent).
 |---|---|---|
 | `install-statusline` | **user-only**: `/cc:install-statusline` | Installs a status line showing model and effort, context usage, 5h/7d rate-limit usage (green when under pace) with reset countdowns, and the session name. Copies the script into `~/.claude` and points `settings.json` at it, backing up anything it replaces and asking before overwriting a status line or script it didn't install. Re-run after a plugin update to pick up changes. macOS/Linux need `jq`; Windows uses a PowerShell port and needs nothing extra. |
 
+### core
+
+General-purpose skills, not tied to one domain.
+
+| Skill | Invocation | What it does |
+|---|---|---|
+| `ideate` | model-invoked | Interviews you in rounds until you share an understanding of a plan, design, or decision. It maps the idea as a tree of decisions, asks only questions that no other answer in the round can invalidate, gives each a recommendation with its reason, and looks up facts itself. It ends with a **Shared understanding** block of decisions and open items, and writes no files. |
+
 ### git-workflow
 
 Git-related skills.
@@ -57,11 +65,11 @@ Document production skills.
 
 ### swe
 
-Software-engineering workflow skills.
+Software-engineering workflow skills. Depends on `core`, which Claude Code installs automatically; on Copilot and Codex, install `core` alongside it.
 
 | Skill | Invocation | What it does |
 |---|---|---|
-| `implement` | **user-only**: `/swe:implement [--delegate] [--model <name>] <target>` | Implements a spec file, GitHub issue, Azure DevOps work item, or in-conversation plan exactly as written — no redesign, no commit. Derives acceptance criteria, builds test-first, then verifies every criterion against the run's diff and reports. `--delegate` cuts the work into sequential phases run by subagents, optionally on a cheaper `--model`; verification always stays with the orchestrator. |
+| `spec` | **user-only**: `/swe:spec [context]` | Turns the current conversation, starting from `core:ideate`'s Shared understanding block if there is one, into `.scratch/YYYYMMDD-<slug>-spec.md`, or the spec location the repo's `CLAUDE.md` / `AGENTS.md` names. Sections: problem, goals and non-goals, decisions with their reasons, acceptance criteria, open questions, and slices for work bigger than one session. `context` narrows the scope and names the file. Every run writes a new file, and gaps become open questions instead of guesses. |
 
 ## Repo structure
 

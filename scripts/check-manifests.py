@@ -21,6 +21,10 @@ that:
   5. every skills/*/SKILL.md meets the Agent Skills name, description, and
      compatibility limits. Claude's extra frontmatter fields are allowed.
 
+Separately, for every plugin (CLAUDE_ONLY included), each same-marketplace
+entry in .claude-plugin/plugin.json "dependencies" must name a plugin listed in
+marketplace.json; Claude's validator accepts a misspelled one.
+
 Needs network access. Run from anywhere: uv run scripts/check-manifests.py
 """
 
@@ -144,6 +148,25 @@ def check_skills(root: Path) -> list[str]:
     return problems
 
 
+def check_dependencies(root: Path, listed: set[str], marketplace: str) -> list[str]:
+    claude_path = root / ".claude-plugin/plugin.json"
+    if not claude_path.exists():
+        return []
+    problems = []
+    for dependency in json.loads(claude_path.read_text()).get("dependencies", []):
+        # Entries are "name", "name@marketplace", or {"name", "version", "marketplace"}.
+        if isinstance(dependency, dict):
+            name, source = dependency.get("name"), dependency.get("marketplace", marketplace)
+        else:
+            name, _, source = str(dependency).partition("@")
+            source = source or marketplace
+        if source == marketplace and name not in listed:
+            problems.append(
+                f'.claude-plugin/plugin.json depends on "{name}", which marketplace.json does not list'
+            )
+    return problems
+
+
 def check_plugin(root: Path) -> list[str]:
     spec = json.loads((root / "plugin.json").read_text())
     claude_path = root / ".claude-plugin/plugin.json"
@@ -157,22 +180,27 @@ def check_plugin(root: Path) -> list[str]:
 
 def main() -> int:
     marketplace = json.loads((REPO / ".claude-plugin/marketplace.json").read_text())
+    listed = {entry["name"] for entry in marketplace["plugins"]}
     failed = False
     for entry in marketplace["plugins"]:
         name, root = entry["name"], (REPO / entry["source"]).resolve()
         has_root_manifest = (root / "plugin.json").exists()
+        dependency_problems = check_dependencies(root, listed, marketplace["name"])
         if name in CLAUDE_ONLY:
+            for problem in dependency_problems:
+                failed = True
+                print(f"✘ {name}: {problem}")
             if has_root_manifest:
                 failed = True
                 print(f"✘ {name}: listed in CLAUDE_ONLY but has a root plugin.json")
-            else:
+            elif not dependency_problems:
                 print(f"– {name}: Claude-only (no root plugin.json)")
             continue
         if not has_root_manifest:
             failed = True
             print(f"✘ {name}: no root plugin.json; add one, or list the plugin in CLAUDE_ONLY")
             continue
-        problems = check_plugin(root)
+        problems = dependency_problems + check_plugin(root)
         if problems:
             failed = True
             for problem in problems:
