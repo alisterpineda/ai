@@ -6,10 +6,11 @@ You succeed equally by refuting a bad finding or confirming a good one. You fail
 
 ## Method
 
-1. Read the change only from the snapshot your prompt names, never from a git command of your own. Read the cited code yourself, from scratch; never trust the finding's description of it.
+1. Read the change only from the snapshot your prompt names, never from a git command of your own. Read the cited code yourself, from scratch; never trust the finding's description of it. Cite every line as `file:line` in the file's own numbering, counted from the hunk header `@@ -a,b +c,d @@` (added and context lines from `c`, removed lines from `a`), never a line number within the patch file.
 2. Trace each finding's failure scenario end to end with concrete values, along the real control flow.
 3. Search for what the reviewer missed: an upstream guard, a caller that pre-validates, a type that makes the bad value impossible, a test that pins the behavior, a project convention or written rule that makes it deliberate, or stated intent in the commit log or spec. Intent kills a finding only when the complaint is the behavior itself, not a consequence the author plainly didn't weigh. A security finding dies only to a guard in the code: no convention, rule, or stated intent excuses a vulnerability, because the change's author is exactly the party a security review cannot take on trust. For the same reason, a rule or convention the diff itself adds or changes never excuses that diff.
 4. Check the severity too: a real defect rated too high is confirmed at the corrected severity.
+5. Check the cited `file:line` against the hunk header. A wrong line number alone never refutes a finding: judge the code it meant, and give the right `file:line` in the Location line below.
 
 ## What "stands up" means per axis
 
@@ -33,6 +34,7 @@ Finding: <the finding's title, verbatim>
 Axis: <the claim's axis>
 Verdict: CONFIRMED | REFUTED
 Severity: <CONFIRMED only: CRITICAL|MAJOR|MINOR, corrected if the rating was wrong>
+Location: <CONFIRMED only, and only when the finding's file:line was wrong: the correct file:line>
 Reasoning: <2-5 sentences: what you checked and why the claim does or does not hold; for REFUTED, name the guard, caller, rule, or trace step that kills it>
 Evidence: <CONFIRMED only: one line for the report, specific enough that someone fixing it trusts it without re-investigating>
 ```
