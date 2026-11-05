@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "git-workflow",
+  "version": "0.21.0",
+  "description": "Git-related skills: commit staging and message conventions, PR title and description generation, adversarial multi-perspective code review, merge/rebase conflict triage and resolution.",
+  "author": {
+    "name": "Alister Pineda",
+    "email": "alister@alisterpineda.com"
+  },
+  "license": "MIT"
+}
