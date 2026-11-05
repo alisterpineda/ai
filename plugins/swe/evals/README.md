@@ -23,4 +23,4 @@ Add `--tag args` for the cheap cases (about $0.05 each) or `--tag review` for th
 - `--scaffold` runs each case's `fixture.sh`, which only creates files and commits in the run's empty workspace.
 - `Write` and `Edit` are granted so a review that tries to modify files is caught by the `no-write` and `no-edit` graders rather than silently blocked.
 - On Linux the harness needs `bubblewrap` and `socat` to grant `Bash`; without them every case fails before it starts.
-- When the harness runs as root, `$TMPDIR` inside the sandbox is read-only, so every `Bash` call reports exit code 1 after it finishes. The snapshot script falls back to `/tmp`, and the review treats a complete manifest as success, so the suite still runs.
+- Don't run the harness as root. Its sandbox then makes `$TMPDIR` read-only, so every `Bash` call reports exit code 1, and the only writable place, `/tmp`, is one the Read tool can't open. The `args` cases still pass, but every `review` case ends with the review reporting that it couldn't read its snapshot.

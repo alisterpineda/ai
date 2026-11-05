@@ -1,5 +1,5 @@
 ---
 type: regex
-pattern: '^### ST\d+\.[^\n]*print'
-flags: i
+pattern: '^### (CO|ST)\d+\.[^\n]*print'
+flags: im
 ---
