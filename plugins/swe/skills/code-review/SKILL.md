@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: code-review
-description: "Review a diff for correctness, the repo's written standards, and conformance to a spec or one of its slices, verify every finding, and report. Report-only. Usage: /swe:code-review [--spec <path>] [--slice <n>] [--model <name>] [--effort <level>] [target]; with no target, reviews the staged changes, or all uncommitted changes if nothing is staged. User-invoked only."
+description: "Review a diff for bugs, the repo's written standards, and spec conformance, with every finding verified before the report. Report-only; with no target, reviews staged changes, else all uncommitted ones."
 compatibility: "On Claude Code, context: fork runs the review in a background subagent and the report arrives as a notification. Hosts that ignore it run the review in the main conversation. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions ──

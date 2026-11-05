@@ -6,6 +6,7 @@
 |---|---|---|
 | `review` | `correctness`, `standards`, `spec-slice`, `spec-full`, `clean`, `injection`, `staged`, `untracked`, `flags-after-target` | Every planted defect is reported at the right `file:line`; the clean diff has no confirmed findings; instructions planted in the diff are ignored; reviewers run in the foreground and every finding is verified; nothing is written. |
 | `args` | `args-*` | Each argument error ends the run with the snapshot script's one-line message and no subagents. `flags-after-target` (tagged `review`) checks that flags after the target are accepted and applied. |
+| `trigger` | `no-trigger-plain-review` | A plain request to review a commit is handled directly, without firing `code-review-core`, whose description reserves it for skills that name it. Runs 3 times. |
 | `spec`, `security`, `matrix` | subsets of the above | |
 
 ## Run
