@@ -1,6 +1,6 @@
 ---
 name: ideate
-description: Interview the user in rounds until you share an understanding of a plan, design, or decision, in any domain. Use when the user explicitly asks to be grilled, interviewed, or stress-tested, or to work through a plan, design, or decision together before acting. A single question with a clear answer gets a direct answer instead.
+description: Interview the user in rounds until you share an understanding of a plan, design, or decision, in any domain. Use when the user explicitly asks to be grilled, interviewed, stress-tested, or to have holes poked in a plan, design, or decision, or to work through one together before acting. Not for interviews that produce content, such as a Q&A write-up, a mock job interview, or a quiz. A single question with a clear answer gets a direct answer instead.
 ---
 
 # Ideate

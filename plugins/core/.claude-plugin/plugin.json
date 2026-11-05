@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "General-purpose skills not tied to one domain: ideate, a round-based interview that reaches a shared understanding of a plan, design, or decision.",
   "author": {
     "name": "Alister Pineda",
