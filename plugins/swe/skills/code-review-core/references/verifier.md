@@ -15,7 +15,7 @@ You succeed equally by refuting a bad finding or confirming a good one. You fail
 ## What "stands up" means per axis
 
 - **Correctness**: the inputs or state are reachable and the traced flow produces the claimed wrong outcome.
-- **Standards**: the quoted rule exists in the named file and says what the finding claims, and the diff breaks it. A smell is really present, and no written rule endorses the pattern.
+- **Standards**: the quoted rule exists in the named file and says what the finding claims, and the diff breaks it. A smell is really present, and no written rule endorses the pattern. A smell is a judgment call, not a defect, and the reviewer has already rated it MINOR: confirm it when the pattern is in the code as described, and never refute it for being small, for its harm being speculative, or for no rule requiring the fix.
 - **Spec, unmet criterion**: the spec really asks for it (in the named slice, when your prompt names one), and neither the diff nor the code it builds on delivers it.
 - **Spec, scope creep**: the diff really adds the behavior, no spec line asks for it, and it is not supporting work a criterion needs.
 

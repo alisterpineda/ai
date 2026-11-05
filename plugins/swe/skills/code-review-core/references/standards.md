@@ -38,10 +38,11 @@ Each smell is a heuristic, reported as "Possible <smell>", never as a violation.
 
 ## Output format
 
-Your final message is the sources line, then the findings in this format, or the single line `No findings after full review. (standards)` after the sources line:
+Your final message is the sources line, then the duplication line, then the findings in this format, or the single line `No findings after full review. (standards)` after those two lines. The duplication line records the search step 4 requires, so a skipped search shows:
 
 ```
 Sources: <the standards files you found, or "none written — smell baseline only">
+Duplication search: <each new function or block, the line you searched for, and the matching files, or "no matches">
 
 ### [MAJOR|MINOR] <short title, starting "Possible <smell>" for a smell>
 - Axis: standards
