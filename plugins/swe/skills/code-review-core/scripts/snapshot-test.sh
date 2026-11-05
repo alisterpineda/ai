@@ -109,7 +109,7 @@ REVIEW_SNAPSHOT_DIR="$work/envsnaps" run
 check "REVIEW_SNAPSHOT_DIR places the snapshot without --snapshots" '[ $code -eq 0 ] && [[ "$(snapdir)" == "$work/envsnaps/"* ]]'
 cleanup_snap
 run --snapshots
-check "--snapshots without a value exits 2" '[ $code -eq 2 ] && [[ "$err" == *"needs a directory"* ]]'
+check "--snapshots without a value exits 2" '[ $code -eq 2 ] && [[ "$err" == *"needs a value"* ]]'
 
 # --- unreadable untracked file lands in uncaptured -----------------------------
 if [ "$(id -u)" -ne 0 ]; then
@@ -243,6 +243,67 @@ run nonesuch;     check "unknown target exits 2" '[ $code -eq 2 ]'
 run --fix;        check "option-looking target exits 2" '[ $code -eq 2 ]'
 run main feature; check "two targets exits 2" '[ $code -eq 2 ]'
 run "nope..main"; check "bad range exits 2" '[ $code -eq 2 ]'
+
+# --- review flags -------------------------------------------------------------
+cat > spec.md <<'MD'
+# A spec
+
+## Acceptance criteria
+1. One.
+2. Two.
+
+## Slices
+1. Core: the core. Criteria: 1
+2. Edges: the edges. Criteria: 2
+MD
+printf '# No slices here\n\n## Goals\n1. A goal.\n' > noslices.md
+run HEAD --effort low
+check "flag after the target is accepted" '[ $code -eq 0 ] && [[ "$out" == *"effort: low"* ]]'
+cleanup_snap
+run --model=sonnet HEAD --effort=high
+check "--flag=value form is accepted" '[ $code -eq 0 ] && [[ "$out" == *"model: sonnet"* ]] && [[ "$out" == *"effort: high"* ]]'
+cleanup_snap
+run HEAD
+check "manifest shows defaults for absent flags" '[[ "$out" == *"spec: none"* ]] && [[ "$out" == *"slice: none"* ]] && [[ "$out" == *"model: default"* ]] && [[ "$out" == *"effort: inherit"* ]]'
+cleanup_snap
+run --spec spec.md --slice 2 HEAD
+check "spec and slice are reported, spec as an absolute path" '[ $code -eq 0 ] && [[ "$out" == *"spec: $work/spec.md"* ]] && [[ "$out" == *"slice: 2"* ]]'
+cleanup_snap
+run --effort extreme main
+check "invalid effort exits 2 and names the levels" '[ $code -eq 2 ] && [[ "$err" == *"extreme"* ]] && [[ "$err" == *"low, medium, high, xhigh, or max"* ]]'
+run --slice 1 main;               check "--slice without --spec exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--slice needs --spec"* ]]'
+run --spec nope.md main;          check "unreadable spec exits 2 naming it" '[ $code -eq 2 ] && [[ "$err" == *"nope.md"* ]]'
+run --spec spec.md --slice 9 main; check "missing slice exits 2 naming the slices" '[ $code -eq 2 ] && [[ "$err" == *"its slices are 1, 2"* ]]'
+run --spec noslices.md --slice 1 main; check "spec without slices exits 2" '[ $code -eq 2 ] && [[ "$err" == *"has no slices"* ]]'
+run --spec spec.md --slice x main; check "non-numeric slice exits 2" '[ $code -eq 2 ]'
+run --effort;                     check "flag without a value exits 2" '[ $code -eq 2 ] && [[ "$err" == *"needs a value"* ]]'
+run --effort --model x main;      check "flag followed by a flag exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--effort needs a value"* ]]'
+run --frobnicate main;            check "unknown flag exits 2 naming the supported flags" '[ $code -eq 2 ] && [[ "$err" == *"--spec <path>, --slice <n>, --model <name>, --effort <level>"* ]]'
+run --effort extreme;             check "argument errors come before nothing-to-review" '[ $code -eq 2 ]'
+rm -f spec.md noslices.md
+
+# --- snapshot location ----------------------------------------------------------
+out=$(TMPDIR=/nonexistent/tmp bash "$snapshot" HEAD 2>/dev/null); code=$?   # not run(): its own mktemp needs TMPDIR
+check "unusable TMPDIR falls back to /tmp" '[ $code -eq 0 ] && [[ "$(snapdir)" == /tmp/code-review-snapshot.* ]]'
+cleanup_snap
+run --snapshots /nonexistent/dir main
+check "explicit --snapshots that is not a directory exits 2" '[ $code -eq 2 ]'
+
+# --- numbered diff --------------------------------------------------------------
+git checkout -q -b numbering main
+printf 'l1\nl2\nl3\n-- sql comment\nl5\nl6\nl7\n' > n.txt; git add n.txt; git commit -qm n-base
+printf 'l1\nl2\nl3\nl5\nnew6\nl6\nl7\nl8' > n.txt; git commit -qam n-change
+run HEAD
+nd() { cat "$(snapdir)/numbered.diff"; }
+check "manifest names the numbered diff" '[[ "$out" == *"diff: $(snapdir)/numbered.diff"* ]] && [ -s "$(snapdir)/numbered.diff" ]'
+check "context lines carry both numbers" 'nd | grep -Eq "^ +3 +3 \| +l3$"'
+check "a removed line starting with -- carries its old number only" 'nd | grep -Eq "^ +4 +\| --- sql comment$"'
+check "an added line carries its new number only" 'nd | grep -Eq "^ {8} +5 \| \+new6$"'
+check "numbering continues past the change" 'nd | grep -Eq "^ +6 +6 \|  l6$"'
+check "no-newline marker is unnumbered" 'nd | grep -Eq "^ +\| \\\\ No newline"'
+check "file headers are unnumbered" 'nd | grep -Eq "^ +\| \+\+\+ b/n.txt$"'
+cleanup_snap
+git checkout -q main
 
 printf '\n%d failure(s)\n' "$fails"
 [ "$fails" -eq 0 ]

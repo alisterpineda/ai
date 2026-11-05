@@ -1,6 +1,6 @@
 {
   "name": "swe",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Software-engineering workflow skills: turn a design conversation into a spec file, and review code for correctness, the repo's written standards, and conformance to a spec.",
   "author": {
     "name": "Alister Pineda",
