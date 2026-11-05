@@ -70,6 +70,8 @@ Software-engineering workflow skills. Depends on `core`, which Claude Code insta
 | Skill | Invocation | What it does |
 |---|---|---|
 | `spec` | **user-only**: `/swe:spec [context]` | Turns the current conversation, starting from `core:ideate`'s Shared understanding block if there is one, into `.scratch/YYYYMMDD-<slug>-spec.md`, or the spec location the repo's `CLAUDE.md` / `AGENTS.md` names. Sections: problem, goals and non-goals, decisions with their reasons, acceptance criteria, open questions, and slices for work bigger than one session. `context` narrows the scope and names the file. Every run writes a new file, and gaps become open questions instead of guesses. |
+| `code-review` | **user-only**: `/swe:code-review [--spec <path>] [--slice <n>] [--model <name>] [--effort <level>] [target]` | Reviews a diff in a background subagent along three axes, each run by its own reviewer: correctness (bugs and security basics), standards (the rules in the repo's `CLAUDE.md` / `AGENTS.md` and the files they point to, plus a Fowler code-smell baseline as judgment calls), and spec (an acceptance-criteria table and scope creep, only with `--spec`; `--slice` limits it to one slice's criteria). A skeptic tries to refute every finding before the report, which has one section per axis. Report-only. With no target, reviews the staged changes, or all uncommitted changes if nothing is staged; otherwise a branch, commit, or commit range. |
+| `code-review-core` | model-invoked, hidden from the `/` menu | The engine behind `code-review`, for other skills to call with the same arguments. It runs in whatever context invokes it, so each caller chooses its own isolation. |
 
 ## Repo structure
 
