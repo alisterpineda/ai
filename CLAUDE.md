@@ -29,6 +29,7 @@ plugins/<plugin-name>/
 │   └── scripts/             # standalone hook scripts (keep logic here, wiring thin)
 ├── agents/                  # Claude Code subagents (one .md per agent, YAML frontmatter)
 ├── commands/                # Claude Code slash commands — prefer skills instead
+├── evals/<skill-name>/      # `claude plugin eval` suite per skill, one directory per case, plus a README
 ├── .mcp.json                # MCP servers, Claude Code format (Copilot reads it only for plugins without a root plugin.json)
 ├── mcp.json                 # MCP servers, Agent Plugins format ($schema + mcpServers, ${PLUGIN_ROOT}); Copilot's copy
 │                            #   of .mcp.json for plugins with a root plugin.json
@@ -56,4 +57,5 @@ After adding a plugin, or after changing any manifest: register it in `.claude-p
   - **Patch:** no observable behavior change — typo/wording fixes, script bugfixes, formatting, tightening instructions without changing the outcome.
   - Minor-vs-patch tiebreaker for prose edits: if you'd want the change to stand out in version history when debugging why a skill started acting differently, it's minor.
   - Plugins stay pre-1.0 but follow the same semantics (no "0.x means anything goes"); cut 1.0 when a plugin is stable enough that a rename would be annoying.
+- **Evals:** each skill's `claude plugin eval` suite lives in `plugins/<plugin>/evals/<skill-name>/`: one flat directory per case, grouped by tags and a name prefix (`trigger-*`, `args-*`) rather than subdirectories, with a README listing the tags and the run command. Write a case as `prompt.md` (frontmatter plus the prompt as its body). Use `case.yaml` only when the case needs `context:` (`scaffold_script`, `history_file`), which `prompt.md` frontmatter rejects.
 - **Naming:** kebab-case for plugin and skill names. Skill names become namespaced as `<plugin-name>:<skill-name>` in Claude Code.
