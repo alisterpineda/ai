@@ -23,7 +23,7 @@ If the review stops instead of reporting, the loop ends there; record its messag
 - **"Nothing to review"** on the first review: the build changed nothing, because the slice was already done. The loop ends with **no changes needed**.
 - **Anything else** (an argument error, or a failure): the loop ends on a **review failure**.
 
-Either way, when no review produced a Spec table, SKILL.md step 8 has you verify the criteria yourself.
+Either way, when no review produced a Spec table, SKILL.md step 9 has you verify the criteria yourself.
 
 Under `--slice all`, an earlier slice's changes are still uncommitted, so later reviews read them too. The Spec axis counts another slice's criteria as delivered early, not as scope creep, and code an earlier loop left clean seldom yields new findings.
 
@@ -41,7 +41,7 @@ Keep a ledger across the loop's reviews: one entry per confirmed finding, holdin
    - **Otherwise**, fix it, whatever its severity: code smells and MINOR findings included. Use the finding's suggested fix as a starting point, not a script. Where the fix changes behavior a test can see, follow test-first: a failing test that shows the defect, then the fix.
 
    Record each fix in the ledger. Every confirmed finding gets fixed or goes to the user; none is declined.
-4. **Run the project checks** and bring them back to the baseline or better (SKILL.md step 7, Project checks), then start the next review.
+4. **Run the project checks** and bring them back to the baseline or better (SKILL.md step 8, Project checks), then start the next review.
 
 Collect the blocker questions of one review into a single message rather than asking one at a time, and wait for the answers before fixing the rest.
 

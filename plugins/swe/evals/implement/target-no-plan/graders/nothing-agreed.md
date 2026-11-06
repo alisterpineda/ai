@@ -1,5 +1,5 @@
 ---
 type: regex
-pattern: 'no agreed plan|nothing (has been |was |is )?agreed'
+pattern: 'no (agreed plan|plan (was |has been |is )?agreed)|nothing (has been |was |is )?agreed'
 flags: i
 ---

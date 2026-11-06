@@ -1,5 +1,5 @@
 ---
 type: regex
-pattern: '^### CO\d+\.[^\n]*(None|load_config)'
-flags: im
+pattern: '^### CO\d+\.(?:(?![\s\S]^### )[\s\S]){0,1200}?\b(None|load_config)\b'
+flags: m
 ---
