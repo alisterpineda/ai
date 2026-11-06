@@ -5,8 +5,9 @@ git init -q -b main
 git config user.name "Fixture Dev"; git config user.email dev@example.com
 git config commit.gpgsign false
 commit() { git add -A && GIT_AUTHOR_DATE=2026-10-01T10:00:00 GIT_COMMITTER_DATE=2026-10-01T10:00:00 git commit -q -m "$1"; }
-# The textkit repo with both specs, committed and clean. Argument errors must
-# end the run before anything is read or built.
+# The textkit repo with both specs, committed and clean. The URL's ? & * must
+# reach preflight unexpanded, and --slice with a ticket ends the run before
+# anything is fetched or built.
 mkdir -p textkit tests docs/specs
 cat > README.md <<'MD'
 # textkit

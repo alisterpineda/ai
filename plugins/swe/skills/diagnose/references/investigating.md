@@ -7,10 +7,10 @@ How to get from a symptom to a mechanism without touching the user's work. Repro
 Reproduce a symptom whenever you can do it here, and try the cheapest route first:
 
 1. An existing test that should catch it: run it, or a narrowed version of it.
-2. A repro script under `.scratch/` at the repository root that calls the code the symptom names. Before the first write, make sure `.scratch/` exists and holds a `.gitignore` whose content is `*`, creating either as needed, so nothing you write there shows up in `git status`.
+2. A repro script under `.scratch/` at the repository root that calls the code the symptom names. Set `.scratch/` up first by the rule in `../spec/SKILL.md` (from this skill's base directory, its **Path** section), so nothing you write there shows up in `git status`.
 3. Running the program the way the report did, with the inputs it gives.
 
-Reproducing is best effort. Some bugs need production data, another platform, or a service you can't reach. When you can't reproduce one, say why in the group's Reproduction section and go on reading the code: a well-supported `likely` is still a diagnosis. Never put a repro test in the project's test tree. `/swe:implement` writes its own failing test first, and it needs a clean tree to start.
+Reproducing is best effort. Some bugs need production data, another platform, or a service you can't reach. When you can't reproduce one, say why in the group's Reproduction section and go on reading the code: a well-supported `likely` is still a diagnosis. Never put a repro test in the project's test tree: the fix's own failing test is `/swe:implement`'s to write, test-first, and a test left behind here would be mistaken for part of the fix.
 
 For a **spec** target, the criteria are the expected behavior. Check the criteria the symptom touches against the code, and name the criterion the code departs from.
 

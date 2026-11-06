@@ -6,15 +6,15 @@ The **review limit** is 7 reviews per slice. This is the one place that sets it;
 
 ## Calling the review
 
-Invoke the skill `swe:code-review-core` through the Skill tool with these arguments, and no target:
+Invoke the skill `swe:code-review-core` through the Skill tool with these arguments:
 
 ```
---spec <spec path> [--slice <n>] [--model <review-model>] [--effort <review-effort>]
+--spec <spec path> [--slice <n>] [--model <review-model>] [--effort <review-effort>] <start-tree id>
 ```
 
 - `--slice <n>`: the slice this loop belongs to, when the spec has slices.
 - `--model` and `--effort`: the manifest's `review-model:` and `review-effort:` values, left out when they are `inherit`.
-- No target: `code-review-core` then reviews every uncommitted change, untracked files included. The run started from a clean tree and stages nothing, so that is exactly the run's own work. The spec file under `.scratch/` is ignored by git and stays out of it.
+- `<start-tree id>`: the tree SKILL.md step 7 recorded, as the review's target. `code-review-core` then reviews every change in the working tree since that tree, untracked files included, and leaves the spec file out by its path. Changes that were in the tree before the run, staged or not, stay out of the review, and so does any part of a file that was already changed.
 
 Follow `code-review-core` to its report; the report is handed back to you, and the loop continues from it. **The review's report is never your final message**, even when it confirms nothing: it is an intermediate result, so don't end your turn on it. Go straight on to *Each review* below, and from there to the next review or to SKILL.md's report. If the Skill tool can't reach it, read `../code-review-core/SKILL.md` from this skill's base directory and follow it with the arguments above as its `ARGUMENTS`, resolving its `scripts/` and `references/` paths against `../code-review-core/`.
 
@@ -25,7 +25,7 @@ If the review stops instead of reporting, the loop ends there; record its messag
 
 Either way, when no review produced a Spec table, SKILL.md step 9 has you verify the criteria yourself.
 
-Under `--slice all`, an earlier slice's changes are still uncommitted, so later reviews read them too. The Spec axis counts another slice's criteria as delivered early, not as scope creep, and code an earlier loop left clean seldom yields new findings.
+Under `--slice all`, the starting tree comes from before the first slice, so later reviews read the earlier slices' changes too. The Spec axis counts another slice's criteria as delivered early, not as scope creep, and code an earlier loop left clean seldom yields new findings.
 
 ## The ledger
 

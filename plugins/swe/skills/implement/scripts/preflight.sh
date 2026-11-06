@@ -2,9 +2,9 @@
 # preflight.sh — parse implement's arguments and check that the run may start.
 #
 # Usage: preflight.sh [--review] [--slice N|all] [--review-model NAME]
-#                     [--review-effort LEVEL] [<target>]
+#                     [--review-effort LEVEL] [<word> …]
 #
-#   Flags may come in any order and on either side of the target; valued flags
+#   Flags may come in any order, before, between, or after the words; valued flags
 #   take `--flag value` or `--flag=value`. The skill passes its arguments here
 #   unchanged, so every argument rule lives in this script.
 #
@@ -14,33 +14,33 @@
 #                         code-review-core's --model, not validated here.
 #   --review-effort LEVEL low, medium, high, xhigh, or max; needs --review.
 #
-#   <target>  a spec file path, an Azure DevOps work-item URL, or a GitHub
-#             issue URL. None means the plan agreed in the conversation.
-#             Classifying it is the skill's job. This script only requires
-#             --slice to come with a readable spec file, or with no target
-#             (a Fix plan in the conversation carries slices; tickets never
-#             do), and checks the slice number against a spec file. With no
-#             target the spec doesn't exist yet: the skill writes it, then
-#             runs this script again with --slice and the spec's path.
+#   <word> …  everything that isn't a flag: the targets (spec files, Azure
+#             DevOps work-item URLs, GitHub issue URLs) and any context after
+#             them, or nothing for the plan agreed in the conversation.
+#             Reading them is the skill's job, by judgment; this script only
+#             passes them on, in order, one `text:` line per argument, so a
+#             quoted path with a space stays whole. Whether
+#             a --slice number exists in the spec is checked by the skill too,
+#             once the spec is settled.
 #
-# Then checks that the working tree is clean: nothing staged, nothing
-# modified, no untracked files (ignored files don't count). An untracked
-# directory is listed once, not file by file. The review reads
-# every uncommitted change as the run's own work, so the run may only start
-# from a clean tree.
+# The working tree may hold uncommitted changes: the skill records the tree
+# before it builds (scripts/start-tree.sh) and reviews only what changed since.
 #
-# Prints a manifest on stdout.
+# Prints a manifest on stdout. It ends with the changes already uncommitted
+# when the run was invoked (git status lines; an untracked directory is listed
+# once, not file by file), or none: the report names them, so nobody takes them for the run's work. The
+# list comes from here, before the run writes its spec or runs the project's
+# checks, so neither shows up in it.
 #
-# Exit codes: 0 ready · 2 argument error · 3 cannot start (not a git
-#             repository, or the tree is not clean) · 1 unexpected failure
+# Exit codes: 0 ready · 2 argument error · 3 not a git repository ·
+#             1 unexpected failure
 
 set -u
 
 die() { local code=$1; shift; printf 'implement: %s\n' "$*" >&2; exit "$code"; }
 
-flags_help="supported flags: --review, --slice <n|all>, --review-model <name>, --review-effort <level>, in any order around at most one target"
-target=""
-have_target=0
+flags_help="supported flags: --review, --slice <n|all>, --review-model <name>, --review-effort <level>, in any order around the targets"
+words=()
 review=0 slice="" review_model="" review_effort=""
 have_slice=0 have_model=0 have_effort=0
 while [ $# -gt 0 ]; do
@@ -59,8 +59,7 @@ while [ $# -gt 0 ]; do
       esac
       shift 2;;
     -*) die 2 "unknown flag '$1' ($flags_help)";;
-    *) [ "$have_target" -eq 0 ] || die 2 "expected at most one target, got '$target' and '$1' ($flags_help)"
-       target=$1; have_target=1; shift;;
+    *) words+=("$1"); shift;;
   esac
 done
 
@@ -79,34 +78,11 @@ fi
 if [ "$have_slice" -eq 1 ]; then
   [[ "$slice" == all || "$slice" =~ ^[1-9][0-9]*$ ]] || die 2 "--slice takes a slice number or 'all', got '$slice'"
 fi
-if [ "$have_slice" -eq 1 ] && [ "$have_target" -eq 1 ]; then
-  { [ -f "$target" ] && [ -r "$target" ]; } ||
-    die 2 "--slice needs a spec file as the target, or no target for a Fix plan in the conversation; tickets have no slices ($flags_help)"
-  # Slice numbers are the numbered items under the spec's `## Slices` heading.
-  # This parser is a copy of the one in code-review-core's scripts/snapshot.sh,
-  # which the review loop calls with --slice: change both together.
-  slices=$(awk '
-    /^##[^#]/ { ins = ($0 ~ /^##[[:space:]]+Slices[[:space:]]*$/); next }
-    ins && /^[[:space:]]*[0-9]+\./ { s = $0; sub(/^[[:space:]]*/, "", s); sub(/\..*/, "", s); print s + 0 }
-  ' "$target")
-  [ -n "$slices" ] || die 2 "--slice $slice: '$target' has no slices (no numbered items under a '## Slices' heading)"
-  if [ "$slice" != all ]; then
-    printf '%s\n' "$slices" | grep -qx "$slice" ||
-      die 2 "--slice $slice: '$target' has no slice $slice; its slices are $(printf '%s\n' "$slices" | paste -sd, - | sed 's/,/, /g')"
-  fi
-fi
 
-toplevel=$(git rev-parse --show-toplevel 2>/dev/null) || die 3 "not inside a git repository; implement starts from a clean git working tree"
+toplevel=$(git rev-parse --show-toplevel 2>/dev/null) || die 3 "not inside a git repository"
 cd "$toplevel" || die 1 "cannot enter $toplevel"
 
-dirty=$(git -c core.quotePath=false status --porcelain --untracked-files=normal) || die 1 "git status failed"
-if [ -n "$dirty" ]; then
-  {
-    printf 'implement: the working tree is not clean. Commit or stash these first, then run again:\n'
-    printf '%s\n' "$dirty" | sed 's/^/  /'
-  } >&2
-  exit 3
-fi
+uncommitted=$(git -c core.quotePath=false status --porcelain --untracked-files=normal) || die 1 "git status failed"
 
 branch=$(git symbolic-ref --quiet --short HEAD) || branch="(detached)"
 head=$(git rev-parse --verify --quiet HEAD^{commit}) || head="(no commits)"
@@ -114,8 +90,10 @@ head=$(git rev-parse --verify --quiet HEAD^{commit}) || head="(no commits)"
 printf 'repo: %s\n' "$toplevel"
 printf 'branch: %s\n' "$branch"
 printf 'head: %s\n' "$head"
-if [ "$have_target" -eq 1 ]; then printf 'target: %s\n' "$target"; else printf 'target: conversation\n'; fi
+if [ "${#words[@]}" -gt 0 ]; then printf 'text: %s\n' "${words[@]}"; else printf 'text: none\n'; fi
 if [ "$review" -eq 1 ]; then printf 'review: yes\n'; else printf 'review: no\n'; fi
 printf 'slice: %s\n' "${slice:-none}"
 printf 'review-model: %s\n' "${review_model:-inherit}"
 printf 'review-effort: %s\n' "${review_effort:-inherit}"
+printf 'uncommitted:\n'
+if [ -n "$uncommitted" ]; then printf '%s\n' "$uncommitted"; else printf 'none\n'; fi

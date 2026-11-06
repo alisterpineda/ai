@@ -3,13 +3,14 @@
 The report is the run's final message and must stand on its own for someone who did not watch the run. Facts only: what was asked, what was built, what was checked, what is still open. Leave out a section marked *(when …)* when its condition doesn't hold; every other section is always present, and one with nothing to say gets the single word `None`.
 
 ```
-# Implemented: <title> (<kind>: <ref>)
+# Implemented: <title> (<kind>: <ref>[, <kind>: <ref> …])
 
 Spec: <path>[ (written by this run)]
 Slice: <n> | <all: n, m, …> | none
 Mode: build only | review loop (<k> reviews; ended clean | ended at the review limit | no changes needed | ended on a review failure)[; review model <name>][; review effort <level>]
 <Branch: "<name>: created from <base>" | "<name>: switched to existing" | "<name>: created tracking <remote>/<name>" | "<name>: already on it". Leave out when the target named none.>
 <Notes: no test infrastructure, a review note such as an unapplied model or effort, or omit.>
+<Uncommitted before the run: <each path from preflight's `uncommitted:` list>. Left out of the review and the self-check; not this run's work. Omit when the list was none. Edits made in the repository while the run waited on its up-front questions are left out of the review too, though this list can't show them.>
 
 ## Criteria
 
@@ -55,7 +56,8 @@ Mode: build only | review loop (<k> reviews; ended clean | ended at the review l
 
 ## Next step
 
-Everything is uncommitted and unstaged. Look over the diff, and commit when you're satisfied.<When build only: add "For an independent review, run /swe:code-review --spec <spec path>[ --slice <n>].">
+Everything is uncommitted and unstaged. Look over the diff, and commit when you're satisfied.<When the tree had uncommitted changes before the run: add "The files listed under Uncommitted before the run held changes before it started; where the run edited one of them too, the diff mixes both."><When build only: add "For an independent review of only this run's changes, run /swe:code-review --spec <spec path>[ --slice <n>] <start-tree id>." The tree id is the review's target; without it, the review would read every uncommitted change, work in progress from before the run included. git prunes the tree after about two weeks.>
+<When this run wrote the spec somewhere git doesn't ignore: "The spec `<spec path>` is new, written by this run; commit it with the work.">
 <When answers from the start changed what was built and the spec is the user's own file: "The spec doesn't record the answers above; fold them in before the next slice.">
 
 <The slice question, when one or more slices ended with every criterion met:>
@@ -64,6 +66,7 @@ Mark slice <n>[, <m>, …] done in `<spec path>`? This adds "Done: <YYYY-MM-DD>.
 
 ## Rules
 
+- The **title line** names each source as `<kind>: <ref>`: `spec: <path>`, `github: <owner>/<repo>#<n>`, `ado: <org>/<project>#<id>`, `conversation: conversation`, or `text: "<the first few words>"`.
 - **Criteria** come from the last review's Spec table with `--review`, and from your own verification without it, or when no review produced a Spec table. List them in the spec's order; under a slice, only that slice's; under `--slice all`, every built slice's, grouped by slice.
 - A **met** criterion cites a test you read, not only one you ran. **Verified by inspection** cites the code location. **Unmet** describes what was observed, never what was hoped.
 - Under `--slice all`, each slice ran its own loop: the Mode line gives each slice's review count and ending, and the Review rounds table restarts its numbering per slice, under a `Slice <n>` row.

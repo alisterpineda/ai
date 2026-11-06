@@ -24,7 +24,10 @@ Read the latest **Shared understanding** block first, if the conversation has on
 
 ## 2. Path
 
-- **Directory**: the spec location named in the repo's `CLAUDE.md` or `AGENTS.md`, if any. Otherwise `.scratch/` at the git repo root, or in the current directory outside a repo. Before writing, make sure `.scratch/` exists and contains a `.gitignore` whose content is `*`, creating either as needed.
+These rules, and the layout in step 3, are the swe plugin's one source for where a spec goes and what it looks like: `/swe:implement` writes its specs by them, and `/swe:diagnose`'s Fix plan follows the layout.
+
+- **Directory**: the spec location named in the repo's `CLAUDE.md` or `AGENTS.md`, if any. Otherwise `.scratch/` at the git repo root, or in the current directory outside a repo.
+- **The `.scratch/` directory**: before anything is written into it, make sure `.scratch/` exists and contains a `.gitignore` whose content is `*`, creating either as needed. Nothing written there then shows in `git status`, a diff, or a review. Every swe skill that writes to `.scratch/` follows this rule.
 - **Filename**: `YYYYMMDD-<slug>-spec.md`, with today's date. The slug is two to five kebab-case words, taken from the context or from the subject.
 - **Every run writes a new file.** If the name is taken, append `-2`, `-3`, and so on before `.md`.
 
@@ -34,6 +37,8 @@ Use these sections, in this order:
 
 ```markdown
 # <Title>
+
+Source: <what the spec was built from: the conversation, ticket URLs, a file>
 
 ## Problem
 What is wrong or missing today, and for whom.
