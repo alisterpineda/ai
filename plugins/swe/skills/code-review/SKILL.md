@@ -8,7 +8,7 @@ compatibility: "On Claude Code, context: fork runs the review in a background su
 # disable-model-invocation blocks auto-invocation; only /swe:code-review works.
 # context: fork + background: true run this body in a background subagent, so
 # the conversation stays usable during the review. The body only hands off to
-# swe:code-review-core, which other skills (a future implement) call directly.
+# swe:code-review-core, which other skills (such as swe:implement) call directly.
 disable-model-invocation: true
 argument-hint: "[--spec <path>] [--slice <n>] [--model <name>] [--effort <level>] [target]"
 context: fork

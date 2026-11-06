@@ -94,6 +94,8 @@ fi
 if [ "$have_slice" -eq 1 ]; then
   [[ "$slice" =~ ^[1-9][0-9]*$ ]] || die 2 "--slice takes a slice number, got '$slice'"
   # Slice numbers are the numbered items under the spec's `## Slices` heading.
+  # swe:implement's scripts/preflight.sh copies this parser and the flag loop
+  # above: change both together.
   slices=$(awk '
     /^##[^#]/ { ins = ($0 ~ /^##[[:space:]]+Slices[[:space:]]*$/); next }
     ins && /^[[:space:]]*[0-9]+\./ { s = $0; sub(/^[[:space:]]*/, "", s); sub(/\..*/, "", s); print s + 0 }
