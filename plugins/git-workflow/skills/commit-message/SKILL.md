@@ -1,6 +1,6 @@
 ---
 name: commit-message
-description: Defines how git commits should be handled — what to stage, how to format the message, and how to run the commit. Use this skill whenever the user asks to commit changes, make a commit, or write a commit message — even if they don't mention formatting or staging. This ensures commits only include relevant changes and follow the user's preferred message style.
+description: Deprecated — if swe:commit-message is available, use it instead of this skill. Defines how git commits should be handled — what to stage, how to format the message, and how to run the commit. Use this skill whenever the user asks to commit changes, make a commit, or write a commit message — even if they don't mention formatting or staging. This ensures commits only include relevant changes and follow the user's preferred message style.
 ---
 
 # Commit Workflow

@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) — read by Claude Code and GitHub Copilot ──
 name: conflict-triage
-description: "Triages conflicts from a merge, rebase, cherry-pick, revert, or stash pop — or predicts them for a GitHub / Azure DevOps pull request — and reports a per-file resolution plan with its risks. Read-only unless --fix is passed. Usage: /git-workflow:conflict-triage [--fix] [target]. Flags come before the target. User-invoked only — never invoke this skill on your own initiative."
+description: "Deprecated, with no successor — this skill still works but gets no further updates. Triages conflicts from a merge, rebase, cherry-pick, revert, or stash pop — or predicts them for a GitHub / Azure DevOps pull request — and reports a per-file resolution plan with its risks. Read-only unless --fix is passed. Usage: /git-workflow:conflict-triage [--fix] [target]. Flags come before the target. User-invoked only — never invoke this skill on your own initiative."
 compatibility: "Portable. The only non-spec fields are disable-model-invocation / user-invocable / argument-hint; hosts that ignore disable-model-invocation lose the user-only guarantee. Needs a git CLI — ≥ 2.38 for git merge-tree --write-tree (PR prediction) and ≥ 2.44 for git merge-file --object-id, with fallbacks noted inline. PR targets need a platform MCP server (GitHub's or Azure DevOps' official one, or equivalent) or the platform CLI (gh / az repos), whichever is present; branch targets need neither."
 
 # ── Non-spec extension, honored by Claude Code and GitHub Copilot (same field
