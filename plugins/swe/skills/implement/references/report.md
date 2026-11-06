@@ -9,7 +9,7 @@ Spec: <path>[ (written by this run)]
 Slice: <n> | <all: n, m, …> | none
 Mode: build only | review loop (<k> reviews; ended clean | ended at the review limit | no changes needed | ended on a review failure)[; review model <name>][; review effort <level>]
 <Branch: "<name>: created from <base>" | "<name>: switched to existing" | "<name>: created tracking <remote>/<name>" | "<name>: already on it". Leave out when the target named none.>
-<Notes: no test infrastructure, a review note such as an unapplied model or effort, or omit.>
+<Notes: no test infrastructure, a review note such as an unapplied model or effort or a review run inline as the fallback, or omit.>
 <Uncommitted before the run: <each path from preflight's `uncommitted:` list>. Left out of the review and the self-check; not this run's work. Omit when the list was none. Edits made in the repository while the run waited on its up-front questions are left out of the review too, though this list can't show them.>
 
 ## Criteria

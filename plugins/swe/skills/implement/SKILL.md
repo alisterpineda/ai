@@ -1,8 +1,8 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: implement
-description: "Implement a spec, Azure DevOps work items, GitHub issues, or the plan agreed in the conversation, test-first, leaving every change uncommitted. Starts from any working tree: changes already there stay out of its review and self-check. Specs with slices build one slice per run by default, or every remaining slice with --slice all. --review adds a loop: review with swe:code-review-core, fix every confirmed finding, and review again until clean, up to 7 reviews. Usage: /swe:implement [--review] [--slice <n|all>] [--review-model <name>] [--review-effort <level>] [target …] [context]. User-invoked only."
-compatibility: "Bash and git. Reads sibling swe skills by relative path (spec's layout, code-review-core's snapshot.sh). Tickets come through swe:fetch-tickets, by the Skill tool or its SKILL.md: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az, else a paste. --review reaches swe:code-review-core the same way and inherits its subagent fallback. Hosts that ignore disable-model-invocation lose the user-only guarantee."
+description: "Implement a spec, Azure DevOps work items, GitHub issues, or the plan agreed in the conversation, test-first, leaving every change uncommitted. Starts from any working tree: changes already there stay out of its review and self-check. Specs with slices build one slice per run by default, or every remaining slice with --slice all. --review adds a loop: review with swe:code-review-core in a subagent, fix every confirmed finding, and review again until clean, up to 7 reviews. Usage: /swe:implement [--review] [--slice <n|all>] [--review-model <name>] [--review-effort <level>] [target …] [context]. User-invoked only."
+compatibility: "Bash and git. Reads sibling swe skills by relative path (spec's layout, code-review-core's snapshot.sh). Tickets come through swe:fetch-tickets, by the Skill tool or its SKILL.md: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az, else a paste. --review runs swe:code-review-core in a subagent (inline without one); its reviewers run in parallel only where subagents may nest. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
 # Blocks auto-invocation; only /swe:implement works. Runs inline, without
@@ -136,7 +136,7 @@ Done when every check has a baseline result and you hold the starting tree.
 
 Under `--slice all`, run steps 8 to 10 for each slice in order before moving on to step 11. Otherwise they run once.
 
-With `--review`, tell the user once, before the first build: don't edit files in this repository until the run finishes, because the review reads every change made since the run's start as the run's own work.
+With `--review`, tell the user once, before the first build: don't edit files in this repository until the run finishes, even while a review runs in the background and the session is free, because the review reads every change made since the run's start as the run's own work.
 
 Read `references/test-first.md` and follow it for every line of code. Build only the slice's criteria (or, unsliced, the spec's), plus the supporting work they need: helpers, types, wiring, fixtures. Work criterion by criterion where the code allows, and keep the tree typechecking as you go.
 
@@ -146,7 +146,7 @@ Done when every criterion in scope has code and, where testable, a test, and the
 
 ## 9. Verify
 
-**With `--review`**: read `references/review-loop.md` and follow it. It reviews with `swe:code-review-core`, fixes every confirmed finding, re-runs the project checks, and reviews again, up to the review limit it sets. When the loop ends without a single Spec table (its first review stopped early), also run the self-verification below, so every criterion still gets a status.
+**With `--review`**: read `references/review-loop.md` and follow it. It reviews with `swe:code-review-core` in a subagent, fixes every confirmed finding, re-runs the project checks, and reviews again, up to the review limit it sets. When the loop ends without a single Spec table (its first review stopped early), also run the self-verification below, so every criterion still gets a status.
 
 **Without `--review`**, verify the work yourself:
 

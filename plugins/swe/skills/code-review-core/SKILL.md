@@ -7,7 +7,8 @@ compatibility: "Hosts that ignore user-invocable list it as a command too. Spawn
 # ── Non-spec extension, honored by Claude Code and GitHub Copilot ──
 # Hidden from the / menu but model-invocable, so other skills can call it.
 # No context: fork: it runs in whatever context invokes it, and each caller
-# chooses its own isolation (/swe:code-review runs it in a background fork).
+# chooses its own isolation (/swe:code-review runs it in a background fork;
+# swe:implement runs it in a subagent it starts).
 user-invocable: false
 ---
 
