@@ -52,7 +52,7 @@ Done when you hold the manifest, or the run has ended with the script's message.
 
 ## 2. Resolve the target into a spec file
 
-Read `references/resolving-targets.md` and follow it. A spec-file target is used as it is; a ticket or the conversation becomes a spec file under `.scratch/`. It ends with the echo line, `Implementing: <title> (<kind>: <ref>) → <spec path>`, printed before anything else happens, so a wrong resolution shows in the first line.
+Read `references/resolving-targets.md` and follow it. A spec-file target is used as it is; a ticket or the conversation becomes a spec file under `.scratch/`. It ends with the echo line, `Implementing: <title> (<kind>: <ref>) → <spec path>`, written as text on its own line before your next tool call, so a wrong resolution shows in the first line. Every run prints it, for every kind of target.
 
 Done when the spec file exists and the echo line is printed.
 

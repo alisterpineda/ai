@@ -1,0 +1,4 @@
+# `claude --resume` saves each eval run's transcript next to history.jsonl,
+# named by the session id. Those transcripts hold account ids and local paths.
+*.jsonl
+!history.jsonl

@@ -79,12 +79,14 @@ Source: <ticket URL | the conversation>
 
 ## Echo
 
-Once the spec file exists, print one line before anything else:
+Once the spec file exists, write this line as text in your reply, on a line of its own, before your next tool call:
 
 ```
 Implementing: <title> (<kind>: <ref>) → <spec path>
 ```
 
 where `<ref>` is the path, `<owner>/<repo>#<n>`, `<org>/<project>#<id>`, or `conversation`. Include the ticket's state when the tracker reports one: an already-closed item is worth the user noticing.
+
+Every run prints it, whatever the kind: a spec file used as it is, and one this run just wrote, too. It is text you write, not a command's output, so a command that writes the spec file doesn't print it for you. Branch switching, baselines, and building all come after it.
 
 Done when the spec file exists, every requirement from someone on the project maps to at least one criterion, every outsider's requirement is held back for step 5, and the echo line is printed.

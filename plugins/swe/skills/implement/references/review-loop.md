@@ -16,7 +16,7 @@ Invoke the skill `swe:code-review-core` through the Skill tool with these argume
 - `--model` and `--effort`: the manifest's `review-model:` and `review-effort:` values, left out when they are `inherit`.
 - No target: `code-review-core` then reviews every uncommitted change, untracked files included. The run started from a clean tree and stages nothing, so that is exactly the run's own work. The spec file under `.scratch/` is ignored by git and stays out of it.
 
-Follow `code-review-core` to its report; the report is handed back to you, and the loop continues from it. If the Skill tool can't reach it, read `../code-review-core/SKILL.md` from this skill's base directory and follow it with the arguments above as its `ARGUMENTS`, resolving its `scripts/` and `references/` paths against `../code-review-core/`.
+Follow `code-review-core` to its report; the report is handed back to you, and the loop continues from it. **The review's report is never your final message**, even when it confirms nothing: it is an intermediate result, so don't end your turn on it. Go straight on to *Each review* below, and from there to the next review or to SKILL.md's report. If the Skill tool can't reach it, read `../code-review-core/SKILL.md` from this skill's base directory and follow it with the arguments above as its `ARGUMENTS`, resolving its `scripts/` and `references/` paths against `../code-review-core/`.
 
 If the review stops instead of reporting, the loop ends there; record its message as the review's result and go to the report:
 
