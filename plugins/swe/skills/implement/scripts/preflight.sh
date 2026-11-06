@@ -17,9 +17,11 @@
 #   <target>  a spec file path, an Azure DevOps work-item URL, or a GitHub
 #             issue URL. None means the plan agreed in the conversation.
 #             Classifying it is the skill's job. This script only requires
-#             --slice to come with a readable spec file (tickets and the
-#             conversation become specs without slices) and checks the slice
-#             number against it.
+#             --slice to come with a readable spec file, or with no target
+#             (a Fix plan in the conversation carries slices; tickets never
+#             do), and checks the slice number against a spec file. With no
+#             target the spec doesn't exist yet: the skill writes it, then
+#             runs this script again with --slice and the spec's path.
 #
 # Then checks that the working tree is clean: nothing staged, nothing
 # modified, no untracked files (ignored files don't count). An untracked
@@ -76,8 +78,10 @@ if [ "$have_effort" -eq 1 ]; then
 fi
 if [ "$have_slice" -eq 1 ]; then
   [[ "$slice" == all || "$slice" =~ ^[1-9][0-9]*$ ]] || die 2 "--slice takes a slice number or 'all', got '$slice'"
-  { [ "$have_target" -eq 1 ] && [ -f "$target" ] && [ -r "$target" ]; } ||
-    die 2 "--slice needs a spec file as the target; tickets and the conversation have no slices ($flags_help)"
+fi
+if [ "$have_slice" -eq 1 ] && [ "$have_target" -eq 1 ]; then
+  { [ -f "$target" ] && [ -r "$target" ]; } ||
+    die 2 "--slice needs a spec file as the target, or no target for a Fix plan in the conversation; tickets have no slices ($flags_help)"
   # Slice numbers are the numbered items under the spec's `## Slices` heading.
   # This parser is a copy of the one in code-review-core's scripts/snapshot.sh,
   # which the review loop calls with --slice: change both together.

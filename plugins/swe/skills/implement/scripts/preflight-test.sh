@@ -86,7 +86,7 @@ run --review-effort low; check "--review-effort needs --review" '[ $code -eq 2 ]
 run --review --review-effort huge; check "invalid effort exits 2 listing the levels" '[ $code -eq 2 ] && [[ "$err" == *"not a valid --review-effort level: use low, medium, high, xhigh, or max"* ]]'
 run --review=no; check "--review=<value> exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--review takes no value"* ]] && [[ "$err" == *"$help"* ]]'
 run --slice 3 https://github.com/o/r/issues/1; check "--slice with a URL target exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--slice needs a spec file"* ]] && [[ "$err" == *"$help"* ]]'
-run --slice 1; check "--slice with no target exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--slice needs a spec file"* ]]'
+run --slice 1; check "--slice with no target is accepted for a Fix plan" '[ $code -eq 0 ] && [[ "$out" == *"target: conversation"* ]] && [[ "$out" == *"slice: 1"* ]]'
 run --slice 1 "$work/missing.md"; check "--slice with a missing spec file exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--slice needs a spec file"* ]]'
 run --slice 3 "$work/spec.md"; check "missing slice exits 2 listing the slices" '[ $code -eq 2 ] && [[ "$err" == *"has no slice 3; its slices are 1, 2"* ]]'
 run --slice 1 "$work/flat.md"; check "slice of a spec without slices exits 2" '[ $code -eq 2 ] && [[ "$err" == *"has no slices"* ]]'

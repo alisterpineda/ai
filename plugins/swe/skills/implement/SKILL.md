@@ -2,7 +2,7 @@
 # ── Portable (agentskills.io spec) ──
 name: implement
 description: "Implement a spec, an Azure DevOps work item, a GitHub issue, or the plan agreed in the conversation, test-first, in a clean working tree, leaving every change uncommitted. Specs with slices build one slice per run by default, or every remaining slice with --slice all. --review adds a loop: review with swe:code-review-core, fix every confirmed finding, and review again until clean, up to 7 reviews. Usage: /swe:implement [--review] [--slice <n|all>] [--review-model <name>] [--review-effort <level>] [target]. User-invoked only."
-compatibility: "The scripts are Bash and need git. GitHub targets need the gh CLI; Azure DevOps targets use a work-item MCP tool or the az CLI, and otherwise ask for a paste. --review reaches swe:code-review-core through the Skill tool, or by reading its SKILL.md, and inherits its subagent fallback. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
+compatibility: "The scripts are Bash and need git. Ticket targets are read by swe:fetch-tickets, reached through the Skill tool or by reading its SKILL.md: GitHub needs the gh CLI or the public API, and Azure DevOps a work-item MCP tool or the az CLI, otherwise a paste. --review reaches swe:code-review-core through the Skill tool, or by reading its SKILL.md, and inherits its subagent fallback. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
 # Blocks auto-invocation; only /swe:implement works. Runs inline, without
@@ -54,6 +54,14 @@ Done when you hold the manifest, or the run has ended with the script's message.
 
 Read `references/resolving-targets.md` and follow it. A spec-file target is used as it is; a ticket or the conversation becomes a spec file under `.scratch/`, with step 3's echo printed just before the write.
 
+**Check `--slice` against the written spec.** When the manifest has `target: conversation` and a `slice:` other than `none`, preflight couldn't check the slice, because the spec didn't exist yet. Run it again now, as exactly this one command, with the manifest's slice value and the spec's path:
+
+```
+bash <skill-dir>/scripts/preflight.sh --slice '<slice>' '<spec path>'
+```
+
+Exit `0`: continue. Exit `2` or `3`: your whole final message is its stderr, word for word. This runs before step 4, so a bad slice ends the run before any branch changes.
+
 Done when the spec file exists.
 
 ## 3. Echo the target
@@ -91,7 +99,7 @@ Done when you are on the named branch, the switch waits for step 6's answer, or 
 
 ## 5. Choose the slices
 
-Slices are the numbered items (`1. <name>: …`) under the spec's `## Slices` heading, read exactly the way the preflight and review scripts read them. When the spec has no `## Slices` heading, the whole spec is the unit of work. When it has the heading but no numbered items under it, stop: say the slices must be numbered for the review to find them. (`--slice` with a spec that has no numbered slices never gets this far: preflight rejects it.)
+Slices are the numbered items (`1. <name>: …`) under the spec's `## Slices` heading, read exactly the way the preflight and review scripts read them. When the spec has no `## Slices` heading, the whole spec is the unit of work. When it has the heading but no numbered items under it, stop: say the slices must be numbered for the review to find them. (`--slice` with a spec that has no numbered slices never gets this far: preflight rejects it, in step 1 for a spec file and in step 2's second run for the conversation.)
 
 A slice is **finished** when its line ends with a `Done: <date>.` marker, or when reading the current code shows every one of its criteria met. Check slices in order and read only as far as you need:
 
