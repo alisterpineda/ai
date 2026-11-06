@@ -20,7 +20,9 @@ run() {
 snapdir() { printf '%s\n' "$out" | sed -n 's/^snapshot: //p'; }
 cleanup_snap() { local d; d=$(snapdir); [ -n "$d" ] && rm -rf "$d"; }
 
-work=$(mktemp -d "${TMPDIR:-/tmp}/snapshot-test.XXXXXX")
+# Normalized through pwd, as snapshot.sh prints paths: a $TMPDIR ending in /
+# (the macOS default) would otherwise leave // in $work.
+work=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/snapshot-test.XXXXXX")" && pwd)
 trap 'rm -rf "$work"' EXIT
 cd "$work" || exit 1
 git init -q -b main .
