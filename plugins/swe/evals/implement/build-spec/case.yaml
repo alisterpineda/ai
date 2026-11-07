@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: build-spec
-tags: [build, security]
+tags: [build, branch, security]
 plugins: ["../../..", "../../../../core"]
 runs: 1
 context:

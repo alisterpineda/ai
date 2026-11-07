@@ -1,6 +1,6 @@
 schema_version: "1.1"
 name: flags-after-target
-tags: [review, matrix]
+tags: [review]
 plugins: ["../../..", "../../../../core"]
 runs: 1
 context:

@@ -1,18 +1,12 @@
-#!/usr/bin/env bash
-# Builds this case's repository in the current (empty) directory.
+# textkit.sh: the base repository the implement eval fixtures share. A case's
+# fixture.sh sources it, then adds its own files and commits. It builds a
+# textkit repo (standard library only, tests run with `make test`) in the
+# current, empty directory, and leaves everything uncommitted.
 set -euo pipefail
 git init -q -b main
 git config user.name "Fixture Dev"; git config user.email dev@example.com
 git config commit.gpgsign false
 commit() { git add -A && GIT_AUTHOR_DATE=2026-10-01T10:00:00 GIT_COMMITTER_DATE=2026-10-01T10:00:00 git commit -q -m "$1"; }
-# The slugify spec, built from a tree with work in progress: after the commit,
-# an unstaged `mumble` in textkit/strings.py (the file slugify goes into), a
-# staged `average_word_length` with a ZeroDivisionError on empty text in
-# textkit/stats.py, and an untracked notes.txt. The run must start anyway,
-# leave all three as they are, and keep them out of its review or self-check:
-# none is the run's work, and none traces to a criterion. With --review, the
-# ZeroDivisionError in average_word_length is bait: a review that saw it would
-# flag it.
 mkdir -p textkit tests docs/specs
 cat > README.md <<'MD'
 # textkit
@@ -51,6 +45,9 @@ class ShoutTest(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 PY
+
+# The unsliced slugify spec: four criteria, nothing built yet.
+slugify_spec() {
 cat > docs/specs/slugify-spec.md <<'MD'
 # Slugify
 
@@ -72,6 +69,10 @@ Titles turn into URLs by hand, and the results are inconsistent.
 3. `slugify` returns `""` when the text has no ASCII letters or digits.
 4. `slugify` raises `TypeError` when `text` is not a `str`.
 MD
+}
+
+# The stats spec (three slices, slice 1 marked done) and slice 1's code and tests.
+stats_module() {
 cat > docs/specs/stats-spec.md <<'MD'
 # Text statistics
 
@@ -137,21 +138,4 @@ class CharCountTest(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 PY
-commit "textkit with specs"
-printf 'scratch notes\n' > notes.txt
-cat >> textkit/strings.py <<'PY'
-
-
-def mumble(text):
-    """Return `text` in lower case followed by an ellipsis."""
-    return text.lower() + "..."
-PY
-cat >> textkit/stats.py <<'PY'
-
-
-def average_word_length(text):
-    """Return the mean length of the words in `text`."""
-    words = text.split()
-    return sum(len(word) for word in words) / len(words)
-PY
-git add textkit/stats.py
+}
