@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: target-no-plan
+tags: [target, quick]
+plugins: ["../../..", "../../../../core"]
+runs: 1
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Agent, Bash, Write, Edit]
+  prompt: "/swe:plan"

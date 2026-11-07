@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: spec
-description: "Turn the current conversation into a spec file, under .scratch/ unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions, optional slices. Usage: /swe:spec [context], where context narrows the scope and names the file. User-invoked only."
+description: "Turn the current conversation into a spec file, under .scratch/ unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions. Usage: /swe:spec [context], where context narrows the scope and names the file. User-invoked only."
 compatibility: "Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -24,7 +24,7 @@ Read the latest **Shared understanding** block first, if the conversation has on
 
 ## 2. Path
 
-These rules, and the layout in step 3, are the swe plugin's one source for where a spec goes and what it looks like: `/swe:implement` writes its specs by them, and `/swe:diagnose`'s Fix plan follows the layout.
+These rules, and the layout in step 3, are the swe plugin's one source for where a spec goes and what it looks like: `/swe:plan` names and places its plans by the same rules, and `/swe:diagnose`'s Fix plan follows the layout.
 
 - **Directory**: the spec location named in the repo's `CLAUDE.md` or `AGENTS.md`, if any. Otherwise `.scratch/` at the git repo root, or in the current directory outside a repo.
 - **The `.scratch/` directory**: before anything is written into it, make sure `.scratch/` exists and contains a `.gitignore` whose content is `*`, creating either as needed. Nothing written there then shows in `git status`, a diff, or a review. Every swe skill that writes to `.scratch/` follows this rule.
@@ -54,14 +54,10 @@ What is wrong or missing today, and for whom.
 
 ## Open questions
 - <question>: <why it matters>
-
-## Slices
-1. <name>: <what it delivers end to end>. Criteria: <numbers>
 ```
 
 - **Decisions** carry their reason. A decision the conversation never justified goes in as stated, with an open question asking why.
 - **Acceptance criteria** are numbered, and each one can be checked on its own.
-- **Slices** appear only when the work won't fit in one agent session. Each is a vertical chunk that satisfies whole criteria.
 - **Every line traces to the conversation.** Anything you would have to invent goes to Open questions.
 - When you name code (modules, files, commands), confirm in the repo that it exists.
 

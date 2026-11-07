@@ -239,62 +239,14 @@ git checkout -q main
 run "main...lone"
 check "three-dot range without a merge base exits 2" '[ $code -eq 2 ] && [[ "$err" == *"no merge base"* ]]'
 
-# --- a tree target: the working tree's changes since that tree ------------------
-# A caller (swe:implement's start-tree.sh) records the working tree as a tree
-# object; the review then sees only what changed since.
-tree_of_worktree() {   # the same recipe start-tree.sh uses
-  local idx; idx=$(mktemp)
-  cp "$(git rev-parse --git-path index)" "$idx"
-  GIT_INDEX_FILE=$idx git add -A --ignore-errors -- . >/dev/null 2>&1
-  GIT_INDEX_FILE=$idx git write-tree; rm -f "$idx"
-}
-mkdir -p docs; printf '# Spec\n\n## Acceptance criteria\n1. One.\n' > docs/tspec.md
-git add docs/tspec.md; git commit -qm tspec
-printf 'before\n' >> a.txt                       # uncommitted before the "run"
-printf 'w\n' > wip.txt                           # untracked before the "run"
-printf 's\n' > staged-wip.txt; git add staged-wip.txt
-index_before=$(git ls-files -s; git diff --cached --raw)
-start=$(tree_of_worktree)
-printf 'during\n' >> a.txt                       # the run's own edits
-printf 'r\n' > made.txt
-printf 'Done: today.\n' >> docs/tspec.md
-run --spec docs/tspec.md "$start"
-patch="$(snapdir)/diff.patch"
-check "tree target exits 0 with its scope" '[ $code -eq 0 ] && [[ "$out" == *"scope: changes in the working tree since tree"* ]]'
-check "tree target keeps only the hunks made since the tree" 'grep -qx "+during" "$patch" && ! grep -qx "+before" "$patch"'
-check "tree target includes files created since" 'grep -q "^+++ b/made.txt" "$patch"'
-check "tree target leaves out changes already there" '! grep -q "wip.txt" "$patch"'
-check "tree target leaves out the --spec file" '! grep -q "tspec" "$patch" && ! printf "%s\n" "$out" | grep -q "	docs/tspec.md$"'
-check "tree target has no log" '[[ "$out" == *"log: none"* ]] && [ ! -e "$(snapdir)/log.txt" ]'
-check "tree target leaves the real index alone" '[ "$(git ls-files -s; git diff --cached --raw)" = "$index_before" ]'
-check "git apply parses the tree-target patch" 'git apply --numstat "$patch" >/dev/null'
-cleanup_snap
-run "$start"
-check "without --spec the spec's own change is reviewed" '[ $code -eq 0 ] && grep -q "^+++ b/docs/tspec.md" "$(snapdir)/diff.patch"'
-cleanup_snap
-( cd docs && run --spec tspec.md "$start"; printf '%s' "$out" > "$work/.sub-out"; printf '%s' "$code" > "$work/.sub-code" )
-out=$(cat "$work/.sub-out"); code=$(cat "$work/.sub-code"); rm -f "$work/.sub-out" "$work/.sub-code"
-check "a spec path relative to a subdirectory is still left out" '[ $code -eq 0 ] && ! grep -q "tspec" "$(snapdir)/diff.patch" && grep -q "^+++ b/made.txt" "$(snapdir)/diff.patch"'
-cleanup_snap
-printf '0123456789\n' > big.txt
-REVIEW_UNTRACKED_MAX_BYTES=5 run "$start"
-check "tree target skips an oversized added file and lists it" '[ $code -eq 0 ] && ! grep -q "b/big.txt" "$(snapdir)/diff.patch" && [[ "$out" == *"big.txt (11 bytes, over 5)"* ]]'
-cleanup_snap
-rm -f big.txt made.txt; git checkout -q docs/tspec.md
-git show "$start:a.txt" > a.txt
-run --spec docs/tspec.md "$start"
-check "no change since the tree is nothing to review" '[ $code -eq 3 ] && [[ "$err" == *"nothing to review"* ]]'
-run "$(git rev-parse HEAD:docs/tspec.md)"
-check "a blob id is not a target" '[ $code -eq 2 ] && [[ "$err" == *"is not a branch"* ]]'
-git rm -q --cached staged-wip.txt; rm -f staged-wip.txt wip.txt; git checkout -q a.txt
-git rm -rq docs; git commit -qm untspec
-
 # --- argument errors ----------------------------------------------------------
 run a.txt;        check "path target exits 2" '[ $code -eq 2 ] && [[ "$err" == *"paths are not supported"* ]]'
 run nonesuch;     check "unknown target exits 2" '[ $code -eq 2 ]'
 run --fix;        check "option-looking target exits 2" '[ $code -eq 2 ]'
 run main feature; check "two targets exits 2" '[ $code -eq 2 ]'
 run "nope..main"; check "bad range exits 2" '[ $code -eq 2 ]'
+run "$(git rev-parse 'HEAD^{tree}')"; check "a tree id is not a target" '[ $code -eq 2 ] && [[ "$err" == *"is not a branch"* ]]'
+run "$(git rev-parse HEAD:a.txt)";    check "a blob id is not a target" '[ $code -eq 2 ] && [[ "$err" == *"is not a branch"* ]]'
 
 # --- review flags -------------------------------------------------------------
 cat > spec.md <<'MD'

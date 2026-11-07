@@ -26,14 +26,6 @@
 #   <A..B|A...B>  that range's diff
 #   <commit>      that commit's own change (merge: against first parent;
 #                 root: against the empty tree)
-#   <tree>        a tree object id: every change in the working tree since that
-#                 tree, untracked files included and ignored files left out.
-#                 For callers that recorded the working tree before doing work
-#                 (swe:implement's scripts/start-tree.sh), so changes that were
-#                 already uncommitted at the start stay out of the review. The
-#                 --spec file is left out of this diff: it is the caller's
-#                 yardstick, not its work. The working tree is read as a tree
-#                 the same way start-tree.sh records it: change both together.
 #
 # Creates a fresh temporary directory and writes:
 #   diff.patch      git's patch, for machines (git apply parses it)
@@ -48,7 +40,6 @@
 # An untracked file over $REVIEW_UNTRACKED_MAX_BYTES (default 262144) is left
 # out and listed as uncaptured with its size: it is usually a generated file,
 # dump, or log the user never meant to add, and every reviewer would read it.
-# For a <tree> target the same cap applies to every file added since the tree.
 #
 # Exit codes: 0 snapshot ready · 2 argument error · 3 nothing to review ·
 #             1 unexpected failure
@@ -103,7 +94,7 @@ fi
 if [ "$have_slice" -eq 1 ]; then
   [[ "$slice" =~ ^[1-9][0-9]*$ ]] || die 2 "--slice takes a slice number, got '$slice'"
   # Slice numbers are the numbered items under the spec's `## Slices` heading.
-  # swe:implement reads a spec's slices the same way, by this rule.
+  # swe:plan writes a plan's slices in this shape.
   slices=$(awk '
     /^##[^#]/ { ins = ($0 ~ /^##[[:space:]]+Slices[[:space:]]*$/); next }
     ins && /^[[:space:]]*[0-9]+\./ { s = $0; sub(/^[[:space:]]*/, "", s); sub(/\..*/, "", s); print s + 0 }
@@ -141,7 +132,6 @@ is_ref() {
 # logcmd selects the commits whose messages state the change's intent; it stays
 # empty for staged and uncommitted changes, which have no messages yet.
 untracked=0
-since_tree=""
 logcmd=()
 if [ -z "$target" ]; then
   if ! git diff --cached --quiet 2>/dev/null; then
@@ -192,9 +182,6 @@ elif commit=$(git rev-parse --verify --quiet "$target^{commit}"); then
     cmd=(diff "$commit^1" "$commit")
     logcmd=(-1 "$commit")
   fi
-elif [ "$(git cat-file -t "$target" 2>/dev/null)" = tree ]; then
-  since_tree=$(git rev-parse --verify --quiet "$target^{tree}") || die 2 "cannot resolve tree '$target'"
-  scope="changes in the working tree since tree $(git rev-parse --short "$since_tree")"
 else
   die 2 "'$target' is not a branch, tag, commit, or commit range (paths are not supported)"
 fi
@@ -218,42 +205,7 @@ done
 [ -n "$snap" ] || die 1 "cannot create a snapshot directory in any of: ${roots[*]}"
 patch="$snap/diff.patch"
 
-pathspec=()
-if [ -n "$since_tree" ]; then
-  # The working tree now, as a tree object: the real index copied into a
-  # temporary one (its stat cache spares rehashing unchanged files), then every
-  # tracked and untracked file added, ignored files left out. The real index is
-  # never written. scripts/start-tree.sh in swe:implement records the starting
-  # tree the same way: change both together.
-  idx="$snap/index"
-  real_index=$(git rev-parse --git-path index)
-  if [ -f "$real_index" ]; then cp "$real_index" "$idx" || { rm -rf "$snap"; die 1 "cannot copy the index"; }
-  else GIT_INDEX_FILE=$idx git read-tree --empty || { rm -rf "$snap"; die 1 "git read-tree failed"; }
-  fi
-  # Exit 1 means some unreadable file was left out; anything higher is fatal.
-  GIT_INDEX_FILE=$idx git add -A --ignore-errors -- . >/dev/null 2>&1
-  [ $? -le 1 ] || { rm -rf "$snap"; die 1 "git add into the temporary index failed"; }
-  now_tree=$(GIT_INDEX_FILE=$idx git write-tree) || { rm -rf "$snap"; die 1 "git write-tree failed"; }
-  rm -f "$idx"
-  pathspec=(-- .)
-  if [ "$have_spec" -eq 1 ]; then
-    spec_real="$(cd "$(dirname "$spec_abs")" && pwd -P)/$(basename "$spec_abs")"
-    case "$spec_real" in
-      "$toplevel"/*) pathspec+=(":(top,literal,exclude)${spec_real#"$toplevel"/}");;
-    esac
-  fi
-  # Files added since the tree get the untracked-file size cap.
-  while IFS= read -r -d '' p; do
-    size=$(git cat-file -s "$now_tree:$p" 2>/dev/null) || continue
-    if [ "$size" -gt "$untracked_max_bytes" ]; then
-      printf '%s (%s bytes, over %s)\n' "$p" "$size" "$untracked_max_bytes" >> "$snap/uncaptured.txt"
-      pathspec+=(":(top,literal,exclude)$p")
-    fi
-  done < <(git diff --name-only -z --no-renames --diff-filter=A "$since_tree" "$now_tree" "${pathspec[@]}")
-  cmd=(diff "$since_tree" "$now_tree")
-fi
-
-"${git[@]}" "${cmd[@]}" "${diffopts[@]}" ${pathspec[@]+"${pathspec[@]}"} > "$patch" || { rm -rf "$snap"; die 1 "git ${cmd[*]} failed"; }
+"${git[@]}" "${cmd[@]}" "${diffopts[@]}" > "$patch" || { rm -rf "$snap"; die 1 "git ${cmd[*]} failed"; }
 
 if [ "$untracked" -eq 1 ]; then
   # Each path goes through a variable, never into command text: filenames are
