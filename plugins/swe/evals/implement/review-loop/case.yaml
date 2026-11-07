@@ -9,4 +9,4 @@ execution:
   max_turns: 200
   timeout_seconds: 3600
   allowed_tools: [Read, Glob, Grep, Skill, Agent, Bash, Write, Edit]
-  prompt: "/swe:implement --review --review-model sonnet --review-effort low docs/specs/slugify-spec.md"
+  prompt: "/swe:implement --review --review-model opus --review-effort low docs/specs/slugify-spec.md"
