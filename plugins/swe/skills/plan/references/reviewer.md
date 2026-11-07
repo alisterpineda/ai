@@ -17,7 +17,7 @@ When the plan's `Source:` line or your prompt names the criteria in scope, check
 
 ## Rules
 
-- **Read-only.** You read and report; the files stay as you found them. Don't run the project's checks: read the files that define them.
+- **Read-only.** Read the repository with the file read and search tools, and modify nothing. Don't run the project's checks: read the files that define them.
 - Report only defects you can point at in the plan, with evidence from the code or the spec. Style preferences are not findings.
 
 ## Output format

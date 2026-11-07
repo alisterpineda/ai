@@ -8,6 +8,12 @@ compatibility: "Hosts that ignore disable-model-invocation lose the user-only in
 # Blocks auto-invocation; only /swe:spec works.
 disable-model-invocation: true
 argument-hint: "[context]"
+
+# Maintainer notes (frontmatter never reaches the model):
+# - references/path.md is the swe plugin's one source for where its files go:
+#   /swe:plan and /swe:diagnose read it too.
+# - The layout in step 3 is the one source for a spec's shape: /swe:diagnose's
+#   Fix plan follows it.
 ---
 
 # Spec
@@ -24,12 +30,7 @@ Read the latest **Shared understanding** block first, if the conversation has on
 
 ## 2. Path
 
-These rules, and the layout in step 3, are the swe plugin's one source for where a spec goes and what it looks like: `/swe:plan` names and places its plans by the same rules, and `/swe:diagnose`'s Fix plan follows the layout.
-
-- **Directory**: the spec location named in the repo's `CLAUDE.md` or `AGENTS.md`, if any. Otherwise `.scratch/` at the git repo root, or in the current directory outside a repo.
-- **The `.scratch/` directory**: before anything is written into it, make sure `.scratch/` exists and contains a `.gitignore` whose content is `*`, creating either as needed. Nothing written there then shows in `git status`, a diff, or a review. Every swe skill that writes to `.scratch/` follows this rule.
-- **Filename**: `YYYYMMDD-<slug>-spec.md`, with today's date. The slug is two to five kebab-case words, taken from the context or from the subject.
-- **Every run writes a new file.** If the name is taken, append `-2`, `-3`, and so on before `.md`.
+Read `references/path.md` and follow it, with the kind `spec`.
 
 ## 3. Write
 
