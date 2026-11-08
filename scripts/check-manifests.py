@@ -21,9 +21,13 @@ that:
   5. every skills/*/SKILL.md meets the Agent Skills name, description, and
      compatibility limits. Claude's extra frontmatter fields are allowed.
 
-Separately, for every plugin (CLAUDE_ONLY included), each same-marketplace
-entry in .claude-plugin/plugin.json "dependencies" must name a plugin listed in
-marketplace.json; Claude's validator accepts a misspelled one.
+Separately, for every plugin (CLAUDE_ONLY included):
+  - each same-marketplace entry in .claude-plugin/plugin.json "dependencies"
+    must name a plugin listed in marketplace.json; Claude's validator accepts a
+    misspelled one.
+  - files at the same skills/*/references/<name> path in two or more skills
+    must be identical. Skills read no files outside their own directory, so
+    shared content is copied, and the shared name links the copies.
 
 Needs network access. Run from anywhere: uv run scripts/check-manifests.py
 """
@@ -167,6 +171,22 @@ def check_dependencies(root: Path, listed: set[str], marketplace: str) -> list[s
     return problems
 
 
+def check_reference_copies(root: Path) -> list[str]:
+    # skills/<skill>/references/<name> -> {skill: path}
+    copies: dict[str, dict[str, Path]] = {}
+    for path in sorted((root / "skills").glob("*/references/**/*")):
+        if path.is_file():
+            skill, _, *name = path.relative_to(root / "skills").parts
+            copies.setdefault("/".join(name), {})[skill] = path
+    problems = []
+    for name, paths in copies.items():
+        if len({path.read_bytes() for path in paths.values()}) > 1:
+            problems.append(
+                f"references/{name} differs between the skills that copy it ({', '.join(paths)})"
+            )
+    return problems
+
+
 def check_plugin(root: Path) -> list[str]:
     spec = json.loads((root / "plugin.json").read_text())
     claude_path = root / ".claude-plugin/plugin.json"
@@ -185,22 +205,22 @@ def main() -> int:
     for entry in marketplace["plugins"]:
         name, root = entry["name"], (REPO / entry["source"]).resolve()
         has_root_manifest = (root / "plugin.json").exists()
-        dependency_problems = check_dependencies(root, listed, marketplace["name"])
+        common_problems = check_dependencies(root, listed, marketplace["name"]) + check_reference_copies(root)
         if name in CLAUDE_ONLY:
-            for problem in dependency_problems:
+            for problem in common_problems:
                 failed = True
                 print(f"✘ {name}: {problem}")
             if has_root_manifest:
                 failed = True
                 print(f"✘ {name}: listed in CLAUDE_ONLY but has a root plugin.json")
-            elif not dependency_problems:
+            elif not common_problems:
                 print(f"– {name}: Claude-only (no root plugin.json)")
             continue
         if not has_root_manifest:
             failed = True
             print(f"✘ {name}: no root plugin.json; add one, or list the plugin in CLAUDE_ONLY")
             continue
-        problems = dependency_problems + check_plugin(root)
+        problems = common_problems + check_plugin(root)
         if problems:
             failed = True
             for problem in problems:

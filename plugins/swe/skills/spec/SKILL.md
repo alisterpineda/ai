@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: spec
-description: "Turn the current conversation into a spec file, under .scratch/ unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions. Usage: /swe:spec [context], where context narrows the scope and names the file. User-invoked only."
+description: "Turn the current conversation into a spec file, under .scratch/ unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions, or the sections of the repo's own spec template. Usage: /swe:spec [context], where context narrows the scope and names the file. User-invoked only."
 compatibility: "Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -10,8 +10,10 @@ disable-model-invocation: true
 argument-hint: "[context]"
 
 # Maintainer notes (frontmatter never reaches the model):
-# - references/path.md is the swe plugin's one source for where its files go:
-#   /swe:plan and /swe:diagnose read it too.
+# - references/path.md has identical copies in plan and diagnose; the repo's
+#   check script fails when they differ, so edit all three together.
+# - The layout is the default only: /swe:plan, /swe:diagnose, and
+#   /swe:code-review read specs of any shape, so a repo template can replace it.
 ---
 
 # Spec
@@ -32,7 +34,15 @@ Read `references/path.md` and follow it, with the kind `spec`.
 
 ## 3. Write
 
-Use these sections, in this order:
+Take the spec's structure from the first source that sets one:
+
+1. The user's request in this conversation.
+2. The repository: a spec, RFC, or design-doc template, or a format its `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md` gives.
+3. The user's standing instructions, and other skills in use.
+4. Earlier specs: a structure most specs in the spec directory share.
+5. The layout below.
+
+A source that sets the structure replaces the layout's sections and their order. The rules after the layout still apply inside it: put each decision, criterion, and open question in the section the source gives it, and mark a section the conversation doesn't fill as open instead of filling it.
 
 ```markdown
 # <Title>
@@ -47,6 +57,9 @@ What is wrong or missing today, and for whom.
 
 ## Decisions
 1. <decision>: <why>
+
+## Design
+<technical detail the conversation settled beyond the decisions: interfaces, schemas, data flow, UI states; leave the section out when it settled none>
 
 ## Acceptance criteria
 1. <observable, checkable outcome>

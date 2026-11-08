@@ -15,13 +15,23 @@ description: "Commit changes: stage the task's files by name, write the message,
 #   harness's own attribution is kept as supplied (09cea65).
 # - The body rules write for a reader arriving from blame or bisect and keep
 #   bodies short and selective (137437f).
+# - The format order puts the team's conventions, written or evident in
+#   history, over this skill's own rules, which are the fallback.
 # - "No emoji" in the title and body was cut as default behavior: Opus doesn't
 #   add emoji to commit messages unprompted. Restore it if runs start to.
 ---
 
 # Commit
 
-When the repository defines its own commit conventions (in `CLAUDE.md`, `CONTRIBUTING.md`, a commit template, or similar), follow them wherever they conflict with this skill.
+Take the message's format from the first source that sets one:
+
+1. The user's request in this conversation.
+2. The repository: its `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md`, and a commit template (`commit.template` in git config, or a `.gitmessage`).
+3. The user's standing instructions, and other skills in use.
+4. History: a pattern most of the last 20 commits on the branch follow (`git log -20`), such as a `feat:` prefix, a ticket key, or prose bodies. A mixed history sets nothing.
+5. The Title and Body rules below.
+
+A source's format replaces the Title and Body rules it conflicts with; the rest still apply.
 
 ## 1. Stage the task's changes
 

@@ -4,7 +4,6 @@ source "$(dirname "$0")/../../commit-message/shop.sh"
 # A branch whose history wanders: a function added, renamed, and a debug print
 # added then removed. Its net change is one new discount function.
 git checkout -q -b add-discount
-commit() { GIT_AUTHOR_DATE=2026-10-02T10:00:00 GIT_COMMITTER_DATE=2026-10-02T10:00:00 git commit -q -am "$1"; }
 cat >> src/cart.py <<'PY'
 
 

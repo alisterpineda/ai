@@ -13,6 +13,8 @@ description: "Write a pull-request title and description from the diff between a
 # - The Changes list is short, selective, and light on code names, with one
 #   example per size tier, because earlier examples steered output toward
 #   identifier-heavy nested lists (2eebac7).
+# - Breaking changes, migrations, and deploy steps run past the cap: collapsing
+#   them into a higher-level bullet buried the step a deployer must not miss.
 # - "No emoji" in the title and description was cut as default behavior: Opus
 #   doesn't add emoji to PR text unprompted. Restore it if runs start to.
 ---
@@ -36,14 +38,26 @@ The branches are picked when `git rev-parse --verify` succeeds for both.
 
 This step is done when you can say what every file in `--stat` contributes to the net change.
 
-## 3. Write the title
+## 3. Pick the format
+
+Take the description's format from the first source that sets one:
+
+1. The user's request in this conversation.
+2. The repository: a pull-request template (`pull_request_template.md` or `PULL_REQUEST_TEMPLATE.md` in `.github/`, `docs/`, or the root, or one fitting this change from a `PULL_REQUEST_TEMPLATE/` directory), or a format its `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md` gives.
+3. The user's standing instructions, and other skills in use.
+4. History: a pattern most of the last 10 merged PRs follow (`gh pr list --state merged --limit 10 --json title,body`; without `gh`, `git log --merges -10` on the target from step 1), such as a title prefix, a ticket key, or the same sections. A mixed history sets nothing.
+5. Steps 4 and 5 and the Output format below.
+
+A source that sets the structure replaces the Summary and Changes sections. Write the source's sections in its order, with the rules of step 5 for whatever they hold: the why goes where the source asks for context, the selected changes where it asks for changes. Leave a section the diff can't fill (screenshots, manual testing) as the source has it, and tell the user outside the codeblock. A title format from a source replaces the title rules it conflicts with.
+
+## 4. Write the title
 
 - Start with the verb in present-tense imperative mood ("Add", "Fix", "Remove"), with no type prefix such as `feat:` or `fix:`.
 - Sentence case, under 60 characters when possible, no trailing period.
 - Name things in plain words: "user authentication", not "`AuthService.ts`".
 - When it adds clarity, hint at the why.
 
-## 4. Write the description
+## 5. Write the description
 
 ### Summary
 
@@ -63,7 +77,7 @@ A short bullet list for a reviewer about to open the diff, and for someone readi
 | 2–3 concerns | 3–6 flat bullets |
 | Several distinct areas | Grouped: 2–3 groups of 2–3 nested bullets, plus flat bullets for single-change areas |
 
-Hard cap at any size: 6 top-level bullets and 15 bullets in total, counting group headings. When the selected changes exceed it, describe them at a higher level, collapsing related changes into one bullet, until the list fits, and add the split note (see Output format).
+Hard cap at any size: 6 top-level bullets and 15 bullets in total, counting group headings. When the selected changes exceed it, describe them at a higher level, collapsing related changes into one bullet, until the list fits, and add the split note (see Output format). Breaking changes, migrations, and required deploy steps keep a bullet each, even past the cap.
 
 **Structure.** Write a flat list by default. Group only when several distinct areas each have more than one change worth a bullet: the top-level bullet names the area and the nested bullets say what changed in it, without restating the area. Write an area with a single change as one flat bullet alongside the groups. Order by importance or logical flow.
 
@@ -72,11 +86,11 @@ Hard cap at any size: 6 top-level bullets and 15 bullets in total, counting grou
 - Add the why as a short clause when the reason isn't obvious.
 - Name code only when the reader will type, call, configure, or search for it: endpoints, CLI flags, config keys, env vars, public API names, table and migration names. Describe internal names (private functions, classes, variables) by what the code does.
 
-The description is done when the list fits the cap and its size tier, and no group has a single nested bullet.
+The description is done when the list fits the cap and its size tier, apart from the bullets that may run past it, and no group has a single nested bullet.
 
 ## Output format
 
-Present the title on its own line, then the description in a markdown codeblock:
+Present the title on its own line, then the description in a markdown codeblock. With a format from step 3, the codeblock holds that format's sections; otherwise:
 
 ```
 <the PR title>

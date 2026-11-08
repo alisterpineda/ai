@@ -277,12 +277,24 @@ run --effort extreme main
 check "invalid effort exits 2 and names the levels" '[ $code -eq 2 ] && [[ "$err" == *"extreme"* ]] && [[ "$err" == *"low, medium, high, xhigh, or max"* ]]'
 run --slice 1 main;               check "--slice without --spec exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--slice needs --spec"* ]]'
 run --spec nope.md main;          check "unreadable spec exits 2 naming it" '[ $code -eq 2 ] && [[ "$err" == *"nope.md"* ]]'
-run --spec spec.md --slice 9 main; check "missing slice exits 2 naming the slices" '[ $code -eq 2 ] && [[ "$err" == *"its slices are 1, 2"* ]]'
-run --spec noslices.md --slice 1 main; check "spec without slices exits 2" '[ $code -eq 2 ] && [[ "$err" == *"has no slices"* ]]'
+run --spec noslices.md --slice 3 HEAD
+check "a slice the script can't see is left to the reviewer" '[ $code -eq 0 ] && [[ "$out" == *"slice: 3"* ]]'
+cleanup_snap
+run --spec https://github.com/acme/shop/issues/12 HEAD
+check "a GitHub issue URL is a spec, printed as given" '[ $code -eq 0 ] && [[ "$out" == *"spec: https://github.com/acme/shop/issues/12"* ]]'
+cleanup_snap
+run --spec https://dev.azure.com/acme/Shop%20App/_workitems/edit/7 --slice 1 HEAD
+check "an Azure DevOps work-item URL is a spec" '[ $code -eq 0 ] && [[ "$out" == *"spec: https://dev.azure.com/acme/Shop%20App/_workitems/edit/7"* ]]'
+cleanup_snap
+run --spec https://acme.visualstudio.com/Shop/_workitems/edit/7 HEAD
+check "a visualstudio.com work-item URL is a spec" '[ $code -eq 0 ] && [[ "$out" == *"spec: https://acme.visualstudio.com/Shop/_workitems/edit/7"* ]]'
+cleanup_snap
+run --spec https://github.com/acme/shop/pull/12 main
+check "another URL exits 2 naming the URL kinds" '[ $code -eq 2 ] && [[ "$err" == *"not a GitHub issue or Azure DevOps work-item URL"* ]]'
 run --spec spec.md --slice x main; check "non-numeric slice exits 2" '[ $code -eq 2 ]'
 run --effort;                     check "flag without a value exits 2" '[ $code -eq 2 ] && [[ "$err" == *"needs a value"* ]]'
 run --effort --model x main;      check "flag followed by a flag exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--effort needs a value"* ]]'
-run --frobnicate main;            check "unknown flag exits 2 naming the supported flags" '[ $code -eq 2 ] && [[ "$err" == *"--spec <path>, --slice <n>, --model <name>, --effort <level>"* ]]'
+run --frobnicate main;            check "unknown flag exits 2 naming the supported flags" '[ $code -eq 2 ] && [[ "$err" == *"--spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>"* ]]'
 run --effort extreme;             check "argument errors come before nothing-to-review" '[ $code -eq 2 ]'
 rm -f spec.md noslices.md
 

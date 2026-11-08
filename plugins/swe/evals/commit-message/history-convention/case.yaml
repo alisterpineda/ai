@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: history-convention
+tags: [format]
+plugins: ["../../..", "../../../../core"]
+runs: 1
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Edit, Write]
+  prompt: "Add a count_items(prices) function to src/cart.py that returns how many items are in the cart, and commit it."

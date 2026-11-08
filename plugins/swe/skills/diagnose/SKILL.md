@@ -2,13 +2,17 @@
 # ── Portable (agentskills.io spec) ──
 name: diagnose
 description: "Investigate one or more bugs down to their root cause, without fixing them. A bug can come from GitHub issues, Azure DevOps work items, a spec whose code misbehaves, a bug-report file, a free-text description, or the conversation, and related items can go in one run. Reproduces where it can, labels each root cause confirmed, likely, or hypothesis, groups the items by cause, and hands off to /swe:plan through an Agreed fix block, or adds the fix's criteria to the target spec. Usage: /swe:diagnose [target …] [context]. User-invoked only."
-compatibility: "Needs git for history, bisect, and temporary instrumentation; outside a repository it reads code only. Ticket targets are read by swe:fetch-tickets, reached through the Skill tool or by reading its SKILL.md. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
+compatibility: "Needs git for history, bisect, and temporary instrumentation; outside a repository it reads code only. Ticket targets are read by the skill swe:fetch-tickets, called by name, else pasted by the user. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
 # Blocks auto-invocation; only /swe:diagnose works. Runs inline, without
 # context: fork, so the user sees the run and can answer its questions.
 disable-model-invocation: true
 argument-hint: "[target …] [context]"
+
+# Maintainer notes (frontmatter never reaches the model):
+# - references/path.md has identical copies in spec and plan; the repo's check
+#   script fails when they differ, so edit all three together.
 ---
 
 # Diagnose
@@ -51,8 +55,8 @@ Done when the echo line is printed.
 
 ## 2. Gather the reports
 
-- **Tickets**: fetch every `github` and `ado` target in one call to the skill `swe:fetch-tickets`, through the Skill tool, with the URLs as its arguments. If the Skill tool can't reach it, read `../fetch-tickets/SKILL.md` from this skill's base directory and follow it with the URLs as its `ARGUMENTS`. Its result is never your final message: continue from it here. When it asks for an Azure DevOps paste, wait for it. An item it returns with an `Error:` is reported as not read, and the run goes on with the rest.
-- **Files**: a file with a `## Acceptance criteria` heading is a **spec**. It states intended behavior, and the bug is where the code departs from its criteria. Any other file is a **report** that describes the bug.
+- **Tickets**: fetch every `github` and `ado` target in one call to the skill `swe:fetch-tickets`, through the Skill tool, with the URLs as its arguments, by name. Its result is never your final message: continue from it here. When it asks for an Azure DevOps paste, wait for it. When the skill can't be reached, ask the user to paste each ticket (title, body, repro steps, and the comments that matter), and for a GitHub issue to say which parts were written by people outside the project, and wait. A pasted Azure DevOps item has nothing held back. In a pasted GitHub issue, the parts the user names are held back, and all of it is when they don't say. An item it returns with an `Error:` is reported as not read, and the run goes on with the rest.
+- **Files**: read each one and judge it by what it says, whatever its headings. A file that states how the code should behave (criteria, requirements, user stories, a design) is a **spec**, and the bug is where the code departs from it. A file that describes what went wrong is a **report**.
 - **Free text and the conversation** describe the bug directly.
 
 Note the targets' parents, children, and linked items. Read them for context, fetching any you need through `swe:fetch-tickets`. A linked item that looks like the same bug becomes a **candidate** in the report; it is not investigated as a target, and you don't search the tracker for more.

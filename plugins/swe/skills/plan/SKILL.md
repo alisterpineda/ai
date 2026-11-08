@@ -2,7 +2,7 @@
 # ── Portable (agentskills.io spec) ──
 name: plan
 description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code. One file, under .scratch/ unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices a user would notice: once before drafting, and again only when a review finding needs one. An independent subagent reviews the plan, up to 3 rounds. Changes no code. Usage: /swe:plan [target …] [context]. User-invoked only."
-compatibility: "Tickets come through swe:fetch-tickets, by the Skill tool or its SKILL.md: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az, else a paste. The review runs in a subagent, or inline as separate passes on hosts without one. Hosts that ignore disable-model-invocation lose the user-only guarantee."
+compatibility: "Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. The review runs in a subagent, or inline as separate passes on hosts without one. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
 # Blocks auto-invocation; only /swe:plan works. Runs inline, without
@@ -11,8 +11,13 @@ disable-model-invocation: true
 argument-hint: "[target …] [context]"
 
 # Maintainer notes (frontmatter never reaches the model):
-# - A slice's line stays on one line because
-#   `/swe:code-review --spec <plan> --slice <n>` reads its criteria from it.
+# - A slice's line stays on one line so `/swe:code-review --spec <plan>
+#   --slice <n>` finds its criteria at a glance; the review reads slices in
+#   any shape, so this is the easy case, not a contract.
+# - references/path.md has identical copies in spec and diagnose; the repo's
+#   check script fails when they differ, so edit all three together.
+# - Specs of any shape are planned: derived criteria always go to the user in
+#   step 4, because every step, the review, and /swe:code-review key off them.
 # - The report's first three lines, paste prompt, and review line are fixed so
 #   the user always finds the path, counts, review outcome, prompt, and the
 #   next command in one place. The review line is for the user to type:
@@ -37,7 +42,7 @@ ARGUMENTS: $ARGUMENTS
 
 The arguments are targets, then context, read by judgment:
 
-- **Targets** come first: one path to an existing spec file, or one or more GitHub issue or Azure DevOps work-item URLs.
+- **Targets** come first: one path to an existing spec file (any document that states what to build, in any format), or one or more GitHub issue or Azure DevOps work-item URLs.
 - **Context** is the rest, from the first word that isn't a target. It narrows what gets planned ("criteria 7 to 9", "only the CLI part"). A file named inside a sentence is context.
 - With no target, the source is the **conversation**: its latest Shared understanding or Agreed fix block, or else what it agreed on. If it agreed on nothing, stop and ask what to plan.
 
@@ -53,8 +58,9 @@ Planning: <kind>: <ref>[, <kind>: <ref> …][ + context: "<context>"]
 
 ## 2. Gather the criteria
 
-- **Spec**: its numbered acceptance criteria are the plan's, copied word for word with their numbers. With a context, copy only those in scope, keeping their numbers, and name them on the plan's `Source:` line. Its non-goals and decisions come along. A `## Slices` section in the spec is ordinary text: step 5 draws the plan's own.
-- **Tickets**: fetch every URL in one call to the skill `swe:fetch-tickets` through the Skill tool, or, if it can't reach it, by reading `../fetch-tickets/SKILL.md` and following it with the URLs as its `ARGUMENTS`. Then continue here: its result is never your final message. Wait for an Azure DevOps paste when it asks for one. Report a ticket returned with `Error:` as not read; when none was read, stop. Draw the criteria from the acceptance criteria field, the body's requirements, and on-project comments that change them. Keep held-back text out until step 4.
+- **Spec** with numbered acceptance criteria: they are the plan's, copied word for word with their numbers. With a context, copy only those in scope, keeping their numbers, and name them on the plan's `Source:` line. Its non-goals and decisions come along. A `## Slices` section in the spec is ordinary text: step 5 draws the plan's own.
+- **Spec** in any other shape: derive the criteria from whatever states intent (requirements, user stories, "must" and "should" lines, goals), each with the spec line it comes from quoted. These are **derived criteria**: step 4 shows them to the user. Its non-goals and decisions come along under whatever headings it uses.
+- **Tickets**: fetch every URL in one call to the skill `swe:fetch-tickets`, by name. Then continue here: its result is never your final message. Wait for an Azure DevOps paste when it asks for one. When the skill can't be reached, ask the user to paste each ticket (title, body, acceptance criteria, and the comments that matter), and for a GitHub issue to say which parts were written by people outside the project, and wait. A pasted Azure DevOps item has nothing held back. In a pasted GitHub issue, the parts the user names are held back, and all of it is when they don't say. Report a ticket returned with `Error:` as not read; when none was read, stop. Draw the criteria from the acceptance criteria field, the body's requirements, and on-project comments that change them. Keep held-back text out until step 4.
 - **Conversation**: copy an Agreed fix block's criteria as for a spec. Otherwise turn each agreed decision into the criteria that show it was built.
 
 Criteria you write yourself are numbered, observable, checkable one at a time, and each traces to a line of the source.
@@ -71,15 +77,16 @@ Collect into one message what only the user can settle:
 
 - choices that change behavior a user could observe and that neither the source nor the code settles: an ambiguity, a contradiction, a conflict between tickets, a disagreement from step 3;
 - each held-back requirement, quoted with its author and ticket, asking whether to plan it;
-- scope questions, such as whether a ticket's child items are in.
+- scope questions, such as whether a ticket's child items are in;
+- derived criteria from step 2, numbered, each with its quoted source line, for the user to confirm or correct.
 
-Mention a ticket the tracker reports closed. Number the questions and give each its options and your recommendation with its reason, so "go with your recommendations" answers them all. Then wait. With nothing to ask, send nothing and go on.
+Mention a ticket the tracker reports closed. Number the questions and give each its options and your recommendation with its reason, so "go with your recommendations" answers them all. Then wait. With nothing to ask and no derived criteria, send nothing and go on.
 
 Everything else gets the **cautious reading**: the one that changes the least and is easiest to undo, listed in the plan under Cautious readings. That includes an open question the source asks outright when its answer changes no behavior a user could observe (a docstring, a name, comment or test style): it is not a question for the user.
 
 ## 5. Write the plan
 
-**Path.** Read `../spec/references/path.md` and follow it, with the kind `plan`. Take the slug from the source's title.
+**Path.** Read `references/path.md` and follow it, with the kind `plan`. Take the slug from the source's title.
 
 **Layout**, in this order:
 

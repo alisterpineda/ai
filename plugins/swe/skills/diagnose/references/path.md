@@ -1,0 +1,6 @@
+# Where swe writes its files
+
+- **Directory**: the location for specs named in the repo's `CLAUDE.md` or `AGENTS.md`, if any. Otherwise `.scratch/` at the git repo root, or in the current directory outside a repo.
+- **`.scratch/`**: before writing anything into it, make sure `.scratch/` exists and holds a `.gitignore` whose content is `*`, creating either as needed. Nothing written there then shows in `git status`, a diff, or a review.
+- **Filename**: `YYYYMMDD-<slug>-<kind>.md`, with today's date and the kind your skill names (`spec`, `plan`). The slug is two to five kebab-case words, from the context or the subject.
+- **Every run writes a new file.** If the name is taken, append `-2`, `-3`, and so on before `.md`.

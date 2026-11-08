@@ -34,12 +34,12 @@ After the block, give the command to type, `/swe:plan`, on a line of its own.
 
 ## Update the spec
 
-For each chosen cause that breaks a `spec` target's criteria, edit that spec. Change nothing else in it.
+For each chosen cause that breaks a `spec` target, edit that spec in its own structure and style. Change nothing else in it.
 
-- Append the fix's criteria to `## Acceptance criteria`, numbered after the last one.
-- Append a decision to `## Decisions`, numbered after the last: `<n>. <the fix chosen>: <the root cause at file:line, its outcome label, and the item refs it explains>`.
+- Add the fix's criteria to the spec's list of criteria or requirements, after its last item, numbered or worded the way that list is.
+- Add a decision where the spec records decisions, after its last one: the fix chosen, and the root cause at file:line, its outcome label, and the item refs it explains. A spec with no place for decisions gets it as one short note under the new criteria.
 
-A cause that breaks no spec target goes into an Agreed fix block as above, and you say so. When the spec is tracked by git, say that the edit is an uncommitted change for the user to commit. Then give the command to plan the fix, naming the new criteria so the plan covers them and not the whole spec: `/swe:plan <spec path> criteria <the new numbers>`.
+A cause that breaks no spec target, or whose spec has no list of criteria or requirements, goes into an Agreed fix block as above, and you say so. When the spec is tracked by git, say that the edit is an uncommitted change for the user to commit. Then give the command to plan the fix, naming the new criteria so the plan covers them and not the whole spec: `/swe:plan <spec path> criteria <the new numbers, or the new items' first words>`.
 
 ## Stop
 

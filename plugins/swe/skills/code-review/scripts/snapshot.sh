@@ -2,7 +2,7 @@
 # snapshot.sh — parse /swe:code-review's arguments, resolve the review target,
 # and freeze its diff.
 #
-# Usage: snapshot.sh [--snapshots DIR] [--spec PATH] [--slice N]
+# Usage: snapshot.sh [--snapshots DIR] [--spec PATH|URL] [--slice N]
 #                    [--model NAME] [--effort LEVEL] [<target>]
 #
 #   Flags may come in any order and on either side of the target, as
@@ -14,9 +14,11 @@
 #                    so pass it here. Without it: $REVIEW_SNAPSHOT_DIR, then
 #                    $TMPDIR, then /tmp, the first one that is writable
 #                    (sandboxes often make $TMPDIR read-only).
-#   --spec PATH      spec to review against; must be a readable file.
-#   --slice N        a slice number from the spec's `## Slices` section;
-#                    needs --spec.
+#   --spec PATH|URL  spec to review against: a readable file, or a GitHub
+#                    issue or Azure DevOps work-item URL (printed as given;
+#                    the orchestrator fetches it).
+#   --slice N        a slice number; needs --spec. The spec reviewer finds the
+#                    slice in whatever shape the spec uses.
 #   --model NAME     reviewer/verifier model; passed through, not validated.
 #   --effort LEVEL   low, medium, high, xhigh, or max.
 #
@@ -48,7 +50,7 @@ set -u
 
 die() { local code=$1; shift; printf 'snapshot: %s\n' "$*" >&2; exit "$code"; }
 
-flags_help="supported flags: --spec <path>, --slice <n>, --model <name>, --effort <level>, in any order around one target"
+flags_help="supported flags: --spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>, in any order around one target"
 log_max_commits="${REVIEW_LOG_MAX_COMMITS:-100}"
 untracked_max_bytes="${REVIEW_UNTRACKED_MAX_BYTES:-262144}"
 target=""
@@ -87,21 +89,20 @@ fi
 if [ "$have_slice" -eq 1 ] && [ "$have_spec" -eq 0 ]; then
   die 2 "--slice needs --spec ($flags_help)"
 fi
+github_issue='^https://github\.com/[^/]+/[^/]+/issues/[0-9]+([?#].*)?$'
+ado_item='^https://(dev\.azure\.com/[^/]+|[^/.]+\.visualstudio\.com)/[^/]+/_workitems/edit/[0-9]+([?#].*)?$'
 if [ "$have_spec" -eq 1 ]; then
-  { [ -f "$spec" ] && [ -r "$spec" ]; } || die 2 "--spec '$spec' is not a readable file"
-  spec_abs="$(cd "$(dirname "$spec")" && pwd)/$(basename "$spec")"
+  if [[ "$spec" =~ $github_issue ]] || [[ "$spec" =~ $ado_item ]]; then
+    spec_abs=$spec
+  elif [[ "$spec" =~ ^https?:// ]]; then
+    die 2 "--spec '$spec' is not a GitHub issue or Azure DevOps work-item URL; pass one of those or a file path"
+  else
+    { [ -f "$spec" ] && [ -r "$spec" ]; } || die 2 "--spec '$spec' is not a readable file"
+    spec_abs="$(cd "$(dirname "$spec")" && pwd)/$(basename "$spec")"
+  fi
 fi
 if [ "$have_slice" -eq 1 ]; then
   [[ "$slice" =~ ^[1-9][0-9]*$ ]] || die 2 "--slice takes a slice number, got '$slice'"
-  # Slice numbers are the numbered items under the spec's `## Slices` heading.
-  # swe:plan writes a plan's slices in this shape.
-  slices=$(awk '
-    /^##[^#]/ { ins = ($0 ~ /^##[[:space:]]+Slices[[:space:]]*$/); next }
-    ins && /^[[:space:]]*[0-9]+\./ { s = $0; sub(/^[[:space:]]*/, "", s); sub(/\..*/, "", s); print s + 0 }
-  ' "$spec")
-  [ -n "$slices" ] || die 2 "--slice $slice: '$spec' has no slices (no numbered items under a '## Slices' heading)"
-  printf '%s\n' "$slices" | grep -qx "$slice" ||
-    die 2 "--slice $slice: '$spec' has no slice $slice; its slices are $(printf '%s\n' "$slices" | paste -sd, - | sed 's/,/, /g')"
 fi
 if [ -n "$snapshots" ]; then
   [ -d "$snapshots" ] || die 2 "snapshot root '$snapshots' is not a directory"

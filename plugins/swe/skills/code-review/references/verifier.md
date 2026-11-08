@@ -22,7 +22,7 @@ You succeed equally by refuting a bad finding or confirming a good one. You fail
 
 - **Correctness**: the inputs or state are reachable and the traced flow produces the claimed wrong outcome.
 - **Standards**: the quoted rule exists in the named file, says what the finding claims, and the diff breaks it. A smell stands when the pattern is in the code as described and no written rule endorses it, however small: the reviewer has already rated it MINOR.
-- **Spec, unmet criterion**: the spec really asks for it (in the slice your prompt names, only when it names one), and neither the diff nor the code it builds on delivers it. Without a slice in your prompt, every criterion counts: the spec's plan to deliver it in a later slice doesn't excuse it.
+- **Spec, unmet criterion**: the spec really asks for it (in the slice your prompt names, only when it names one and the spec has that slice), and neither the diff nor the code it builds on delivers it. Without a slice in your prompt, every criterion counts: the spec's plan to deliver it in a later slice doesn't excuse it.
 - **Spec, scope creep**: the diff really adds the behavior, no spec line asks for it, and it is not supporting work a criterion needs.
 
 **CONFIRMED** only if the claim stands up against the actual code and nothing you found prevents it. **REFUTED** for everything else, including "unreachable", "convention", and "couldn't establish it either way": uncertain findings are noise.

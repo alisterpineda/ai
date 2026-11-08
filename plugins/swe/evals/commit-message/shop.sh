@@ -32,3 +32,6 @@ Run `pip install shop` to recieve the latest release.
 MD
 git add -A
 GIT_AUTHOR_DATE=2026-10-01T10:00:00 GIT_COMMITTER_DATE=2026-10-01T10:00:00 git commit -q -m "Init"
+# commit <message>: commits every change, dated a day after Init, for fixtures
+# that build history on top.
+commit() { git add -A && GIT_AUTHOR_DATE=2026-10-02T10:00:00 GIT_COMMITTER_DATE=2026-10-02T10:00:00 git commit -q -m "$1"; }

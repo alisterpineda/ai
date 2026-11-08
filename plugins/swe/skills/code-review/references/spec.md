@@ -10,12 +10,12 @@ You are the person who wrote the spec, checking whether the diff built what you 
 
 ## Method
 
-1. List the **criteria**: the spec's numbered acceptance criteria, quoted. Without any, derive them from its goals and decisions, quoting each source line, and say so in the table heading. When your prompt names a slice, list only the criteria that slice names in the spec's `## Slices` section.
+1. List the **criteria**: the spec's numbered acceptance criteria, quoted. Without any, derive them from its requirements, goals, and decisions, quoting each source line, and say so in the table heading. A criterion drawn from text marked held back (an outsider's, in a fetched ticket) gets `(outsider)` after its number. When your prompt names a slice, find slice <n> in whatever shape the spec gives it (a numbered item under `## Slices`, a phase, milestone, or stage) and list only the criteria it covers. When the spec has no slice <n>, list every criterion and say so on the slice line.
 2. Give each criterion a status from the code:
    - **met**: the diff, or the code it builds on, does it. Cite the `file:line`.
    - **unmet**: missing, partial, or wrong. Say which.
    - **unverifiable**: code can't settle it (a runtime measurement, a deploy, a human check). Say what would.
-3. Hunt **scope creep**: behavior the diff adds that no spec line asks for. Supporting work a criterion needs (tests, wiring, a migration) is not creep. Anything under non-goals is creep, and serious. Under a slice, work delivering another slice's criteria is not creep: name those criteria in the not-in-slice line.
+3. Hunt **scope creep**: behavior the diff adds that no spec line asks for. Supporting work a criterion needs (tests, wiring, a migration) is not creep. Anything under non-goals is creep, and serious. Under a slice, work delivering another slice's criteria is not creep: name those criteria on the slice line.
 
 ## Rules
 
@@ -31,10 +31,12 @@ Your final message is only this:
 | # | Criterion (quoted) | Status | Evidence |
 |---|---|---|---|
 | AC1 | <quoted> | met | <file:line> |
+| AC4 (outsider) | <quoted> | met | <file:line> |
 | AC2 | <quoted> | unmet (partial) | see finding |
 | AC3 | <quoted> | unverifiable | <what would settle it> |
 
-Not in slice <n>: <the other criteria's numbers; any the diff already delivers marked "(delivered early)">   ← only with a slice
+Not in slice <n>: <the other criteria's numbers; any the diff already delivers marked "(delivered early)">   ← only with a slice the spec has
+Slice <n>: not found in the spec; reviewed against every criterion.   ← only with a slice the spec doesn't have
 
 ### [CRITICAL|MAJOR|MINOR] <short title>
 - Axis: spec
