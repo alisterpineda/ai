@@ -43,6 +43,7 @@ General-purpose skills, not tied to one domain.
 | Skill | Invocation | What it does |
 |---|---|---|
 | `ideate` | model-invoked | Interviews you in rounds until you share an understanding of a plan, design, or decision. It maps the idea as a tree of decisions, asks only questions that no other answer in the round can invalidate, gives each a recommendation with its reason, and looks up facts itself. It ends with a **Shared understanding** block of decisions and open items, and writes no files. |
+| `writing-for-ai` | model-invoked | Rules for writing agent instructions (skills, subagent charters and prompts, `CLAUDE.md`/`AGENTS.md`, slash commands) that an agent follows the same way every run, at the lowest load: what goes in the main file and what in a reference, checkable step conditions, wording that states the wanted behavior, where text loads and for how long, descriptions and invocation choice across hosts, where maintainer notes go, and, when editing, keeping scoping conditions and matched strings exactly. Fires when you create, restructure, tighten, or review one. |
 
 ### git-workflow (deprecated)
 
