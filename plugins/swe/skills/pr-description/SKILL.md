@@ -6,6 +6,10 @@ description: "Write a pull-request title and description from the diff between a
 # - The description is written from the cumulative diff and describes the net
 #   result, because reviewers and later readers see the merged state, not the
 #   commits that got there.
+# - The diff is taken against `origin/<target>` because the branch was cut from
+#   a fetched remote state, and remote-tracking refs only move forward: the
+#   merge base is then the real branch point without a fetch. A stale local
+#   target puts upstream commits into the diff.
 # - The Changes list is short, selective, and light on code names, with one
 #   example per size tier, because earlier examples steered output toward
 #   identifier-heavy nested lists (2eebac7).
@@ -18,7 +22,8 @@ description: "Write a pull-request title and description from the diff between a
 ## 1. Pick the branches
 
 - Source: the current branch (HEAD), unless the user names another.
-- Target: the branch the user names. Otherwise `main`, or `master` when `main` doesn't exist.
+- Target: the branch the user names. Otherwise the remote's default branch, from `git symbolic-ref --short refs/remotes/origin/HEAD`; when that fails, `main`, or `master` when `main` doesn't exist.
+- Compare against the target's remote-tracking branch (`origin/<target>`) when it exists, not the local branch: a local `main` that lags behind `origin/main` pulls other people's merged commits into the diff. Don't fetch.
 - Confirm which branches you're comparing if there's any ambiguity.
 
 The branches are picked when `git rev-parse --verify` succeeds for both.

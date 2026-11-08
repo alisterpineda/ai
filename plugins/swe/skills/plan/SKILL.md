@@ -13,8 +13,10 @@ argument-hint: "[target …] [context]"
 # Maintainer notes (frontmatter never reaches the model):
 # - A slice's line stays on one line because
 #   `/swe:code-review --spec <plan> --slice <n>` reads its criteria from it.
-# - The report's first three lines and paste prompt are fixed so the user
-#   always finds the path, counts, review outcome, and prompt in one place.
+# - The report's first three lines, paste prompt, and review line are fixed so
+#   the user always finds the path, counts, review outcome, prompt, and the
+#   next command in one place. The review line is for the user to type:
+#   /swe:code-review is user-invoked only, so the builder can't run it.
 ---
 
 # Plan
@@ -134,7 +136,7 @@ Start another round when this one fixed anything. Stop when a round fixes nothin
 
 ## 7. Report
 
-Your final message is this template. Keep the wording of its first three lines and the paste prompt, filling in the values; word the lines between them yourself.
+Your final message is this template. Keep the wording of its first three lines, the paste prompt, and the review line, filling in the values; word the lines between them yourself.
 
 ````
 Plan: <path>
@@ -149,6 +151,8 @@ To build it, paste:
 ```
 Build [slice 1 of ]`<path>` test-first, one step at a time, in order. Mark each step `Done: <YYYY-MM-DD>.` as you finish it.
 ```
+
+Once it's built, review it: `/swe:code-review --spec <path>[ --slice <n>]`
 ````
 
-The prompt starts with `slice 1 of ` only when the plan has slices.
+The prompt starts with `slice 1 of `, and the review command ends with ` --slice <n>`, only when the plan has slices. Keep `<n>` literal: the user fills in the slice they just built.

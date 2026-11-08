@@ -7,6 +7,9 @@ description: "Commit changes: stage the task's files by name, write the message,
 #   often holds the user's local tweaks (a hardcoded localhost URL), `npm install`
 #   churn, editor config, and experiments. Under-staging costs one `git add`;
 #   over-staging can land an unwanted change on a shared branch.
+# - The scope order lets a user commit work they did themselves: a user who
+#   stages by hand treats the index as what they've verified, so an index the
+#   user scoped to is committed untouched, never re-staged or trimmed.
 # - The heredoc is quoted so the shell never expands backticks or `$` in the body.
 # - The skill says nothing about attribution trailers on purpose, so the
 #   harness's own attribution is kept as supplied (09cea65).
@@ -22,12 +25,20 @@ When the repository defines its own commit conventions (in `CLAUDE.md`, `CONTRIB
 
 ## 1. Stage the task's changes
 
+The task's changes are the first of these that applies:
+
+1. The scope the user names: files, "what I've staged", "my changes".
+2. The files you created or modified during this conversation.
+3. When you changed nothing and the user named nothing: what is already staged. With nothing staged, ask which changes to commit.
+
+When the scope is what is already staged, commit the index as it is: run `git diff --cached` to read it, stage and unstage nothing, and go to step 2. Otherwise:
+
 - Stage files by name with `git add <path>`. Never `git add .`, `git add -A`, or `git add --all`.
-- Stage only files you created or modified during this conversation, even when `git status` shows others as modified or untracked: those belong to the user's other work.
-- Run `git diff <file>` for each file before staging it. When a file mixes your task's changes with unrelated edits, leave it unstaged, tell the user what you found, and let them decide.
-- If files are already staged when you start, review them with `git diff --cached`: they may be leftovers the user staged for another purpose.
+- Stage only the task's files, even when `git status` shows others as modified or untracked: those belong to the user's other work.
+- Run `git diff <file>` for each file before staging it. When a file mixes the task's changes with unrelated edits, leave it unstaged, tell the user what you found, and let them decide.
+- If files outside the task are already staged when you start, leave them staged, tell the user, and ask before committing: they may be leftovers the user staged for another purpose.
 - Leave secrets and credentials unstaged, even in files you created (a `.env` written for a test run, a token in a fixture, a private key, a cloud config with an embedded credential), and tell the user.
-- When your changes serve two or more independent concerns (the feature the user asked for plus an unrelated bug you fixed along the way), stop before staging: tell the user, propose one commit per concern with the files each would contain, and wait for their answer.
+- When the task's changes serve two or more independent concerns (the feature the user asked for plus an unrelated bug you fixed along the way), stop before staging: tell the user, propose one commit per concern with the files each would contain, and wait for their answer.
 - When unsure whether a file belongs, ask instead of staging it.
 
 Staging is done when `git diff --cached` shows exactly the task's changes for one concern.
@@ -37,7 +48,7 @@ Staging is done when `git diff --cached` shows exactly the task's changes for on
 ### Sources
 
 - Describe what `git diff --cached` contains, not what you remember doing and not changes left unstaged.
-- Take the why from the conversation: what the user asked for, the problem they described, and the reasoning behind decisions. Leave out the request itself and the exchange.
+- Take the why from the conversation: what the user asked for, the problem they described, and the reasoning behind decisions. Leave out the request itself and the exchange. When the conversation gives no why, as for changes the user made themselves, leave it out rather than guess.
 - Describe the end state. Write "switch from X to Y" only when X was already in the codebase.
 
 ### Title
