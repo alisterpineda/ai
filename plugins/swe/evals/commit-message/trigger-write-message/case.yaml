@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: trigger-write-message
+tags: [trigger]
+plugins: ["../../..", "../../../../core"]
+runs: 3
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: "What would be a good commit message for what I've staged?"
