@@ -1,0 +1,18 @@
+schema_version: "1.1"
+name: ending-waiting-on-fact
+description: >-
+  A resumed interview whose last answers empty the frontier except one decision
+  waiting on an outside fact. The Shared understanding block lists that
+  decision under Open as waiting on that fact; any other Open item is marked
+  not reached.
+tags: [ending]
+runs: 3
+execution:
+  max_turns: 6
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: >-
+    Q8 (a), replace them all. Q9 (a). Wrap it up with the ideate skill's
+    Shared understanding block.
+context:
+  history_file: history.jsonl

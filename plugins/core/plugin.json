@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "General-purpose skills not tied to one domain: ideate, a round-based interview that reaches a shared understanding of a plan, design, or decision; and writing-for-ai, for writing instructions an agent follows the same way every run, at the lowest load.",
   "author": {
     "name": "Alister Pineda",

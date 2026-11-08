@@ -38,23 +38,32 @@ Open each round after the first with a one-line recap of what the last answers s
 ## Handling answers
 
 - **Agreement** settles the decision; recompute the frontier.
-- **"N/A" or a skip** prunes that branch and everything hanging off it. If a later decision truly needs it, re-raise it once and say why it is needed; a second N/A sends it to Open.
+- **"N/A" or a skip** prunes that branch and everything hanging off it. If a later decision truly needs it, re-raise it once and say why it is needed. A second N/A is the user's decision: record it under Decisions as declined, with what the later decision assumes in its place.
+- **A deferral** ("I'll decide that later") is the user's decision: record it under Decisions as deferred, with who decides or when, and take it off the frontier.
 - **No answer** carries the question to the next round under its number.
 - **A reversal** of an earlier decision: name it as a reversal, and reopen the decisions that hung off the old answer.
 - **An answer resting on a wrong fact**: correct the fact once, with its source, then accept the user's decision.
 
 ## Ending
 
-The interview ends when the frontier is empty, or when the user says stop. Every branch is then decided, pruned, or open. Send the block:
+The interview ends when the frontier is empty, or when the user says stop. Every branch is then decided, pruned, or open. A decision is open for one of two reasons only:
+
+- **Not reached**: the user stopped before it was settled.
+- **Waiting on a fact** that no one in the conversation has and no lookup can find, such as a quote, a measurement, or someone else's view.
+
+Anything else you could still ask is not open: ask it before ending. Send the block, leaving out **Open** when nothing is open:
 
 ```
 ## Shared understanding
 
 **Decisions**
 1. <decision> — <why>
+2. Declined: <item> — <later decision> assumes <assumption> instead
+3. Deferred: <item> — <who decides, or when>
 
 **Open**
-- <unsettled or deferred item> — <why it is open>
+- <item> — not reached
+- <item> — waiting on <fact>
 ```
 
 Ask the user to confirm it. Correct and resend it until they do.
