@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# snapshot.sh — parse code-review-core's arguments, resolve the review target,
+# snapshot.sh — parse /swe:code-review's arguments, resolve the review target,
 # and freeze its diff.
 #
 # Usage: snapshot.sh [--snapshots DIR] [--spec PATH] [--slice N]

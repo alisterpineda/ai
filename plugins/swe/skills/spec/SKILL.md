@@ -12,8 +12,6 @@ argument-hint: "[context]"
 # Maintainer notes (frontmatter never reaches the model):
 # - references/path.md is the swe plugin's one source for where its files go:
 #   /swe:plan and /swe:diagnose read it too.
-# - The layout in step 3 is the one source for a spec's shape: /swe:diagnose's
-#   Fix plan follows it.
 ---
 
 # Spec

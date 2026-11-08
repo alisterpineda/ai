@@ -39,7 +39,7 @@ The arguments are targets, then context, read by judgment:
 
 - **Targets** come first: one path to an existing spec file, or one or more GitHub issue or Azure DevOps work-item URLs.
 - **Context** is the rest, from the first word that isn't a target. It narrows what gets planned ("criteria 7 to 9", "only the CLI part"). A file named inside a sentence is context.
-- With no target, the source is the **conversation**: its latest Shared understanding or Fix plan block, or else what it agreed on. If it agreed on nothing, stop and ask what to plan.
+- With no target, the source is the **conversation**: its latest Shared understanding or Agreed fix block, or else what it agreed on. If it agreed on nothing, stop and ask what to plan.
 
 One run plans one source. Stop with a message saying so when given a spec file together with tickets, or two spec files. Also stop when a leading word looks like a path or URL but names no existing file, GitHub issue, or Azure DevOps work item: name it, and say which targets plan takes.
 
@@ -49,13 +49,13 @@ Before anything else, print the echo line on its own line:
 Planning: <kind>: <ref>[, <kind>: <ref> …][ + context: "<context>"]
 ```
 
-`<kind>` is `spec`, `github`, `ado`, or `conversation`. `<ref>` is the file path, `<owner>/<repo>#<n>`, `<org>/<project>#<id>`, or the block's name (`Shared understanding`, `Fix plan`, or `discussion` when there is no block).
+`<kind>` is `spec`, `github`, `ado`, or `conversation`. `<ref>` is the file path, `<owner>/<repo>#<n>`, `<org>/<project>#<id>`, or the block's name (`Shared understanding`, `Agreed fix`, or `discussion` when there is no block).
 
 ## 2. Gather the criteria
 
 - **Spec**: its numbered acceptance criteria are the plan's, copied word for word with their numbers. With a context, copy only those in scope, keeping their numbers, and name them on the plan's `Source:` line. Its non-goals and decisions come along. A `## Slices` section in the spec is ordinary text: step 5 draws the plan's own.
 - **Tickets**: fetch every URL in one call to the skill `swe:fetch-tickets` through the Skill tool, or, if it can't reach it, by reading `../fetch-tickets/SKILL.md` and following it with the URLs as its `ARGUMENTS`. Then continue here: its result is never your final message. Wait for an Azure DevOps paste when it asks for one. Report a ticket returned with `Error:` as not read; when none was read, stop. Draw the criteria from the acceptance criteria field, the body's requirements, and on-project comments that change them. Keep held-back text out until step 4.
-- **Conversation**: copy a Fix plan block's criteria as for a spec. Otherwise turn each agreed decision into the criteria that show it was built.
+- **Conversation**: copy an Agreed fix block's criteria as for a spec. Otherwise turn each agreed decision into the criteria that show it was built.
 
 Criteria you write yourself are numbered, observable, checkable one at a time, and each traces to a line of the source.
 
@@ -86,7 +86,7 @@ Everything else gets the **cautious reading**: the one that changes the least an
 ```markdown
 # Plan: <title>
 
-Source: <spec path[, criteria <numbers>] | ticket refs | the conversation's Shared understanding, Fix plan, or discussion>
+Source: <spec path[, criteria <numbers>] | ticket refs | the conversation's Shared understanding, Agreed fix, or discussion>
 
 ## Goal
 <what the work achieves, in a sentence or two>

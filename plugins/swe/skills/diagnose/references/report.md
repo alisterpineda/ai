@@ -68,7 +68,6 @@ summarizes the whole diagnosis, for filing a ticket.>
 List only the options that fit, numbered, with your recommendation and why:
 
 - **Plan the fix**: `/swe:plan` from the conversation. Fits when at least one group has a root cause and a recommended fix that is ready to build.
-- **Write a spec**: `/swe:spec` from the conversation, for a fix to be planned later or by someone else.
 - **Update the spec**: add the fix's criteria and a decision to each target spec whose criteria a cause breaks. Fits only when a `spec` target is among the targets and some group departs from its criteria.
 - **Stop**: the report is the result. This is the recommendation when every group is `Working as intended` or `Needs information`, or when you'd want more evidence before anyone builds a fix.
 

@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: diagnose
-description: "Investigate one or more bugs down to their root cause, without fixing them. A bug can come from GitHub issues, Azure DevOps work items, a spec whose code misbehaves, a bug-report file, a free-text description, or the conversation, and related items can go in one run. Reproduces where it can, labels each root cause confirmed, likely, or hypothesis, groups the items by cause, and hands off to /swe:plan or /swe:spec through a Fix plan block, or adds the fix's criteria to the target spec. Usage: /swe:diagnose [target …] [context]. User-invoked only."
+description: "Investigate one or more bugs down to their root cause, without fixing them. A bug can come from GitHub issues, Azure DevOps work items, a spec whose code misbehaves, a bug-report file, a free-text description, or the conversation, and related items can go in one run. Reproduces where it can, labels each root cause confirmed, likely, or hypothesis, groups the items by cause, and hands off to /swe:plan through an Agreed fix block, or adds the fix's criteria to the target spec. Usage: /swe:diagnose [target …] [context]. User-invoked only."
 compatibility: "Needs git for history, bisect, and temporary instrumentation; outside a repository it reads code only. Ticket targets are read by swe:fetch-tickets, reached through the Skill tool or by reading its SKILL.md. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -13,7 +13,7 @@ argument-hint: "[target …] [context]"
 
 # Diagnose
 
-Find out why something is broken. The output is a diagnosis: each root cause with its evidence, the items it explains, and the ways to fix it. You fix nothing. The fix goes through `/swe:plan` or `/swe:spec`, from the Fix plan this run writes once the user picks a hand-off.
+Find out why something is broken. The output is a diagnosis: each root cause with its evidence, the items it explains, and the ways to fix it. You fix nothing. The fix goes through `/swe:plan`, from the Agreed fix block this run writes once the user picks a hand-off.
 
 You run inline in the main conversation, so the user can watch, interrupt, and answer questions mid-run. Paths below are relative to this skill's directory.
 
@@ -87,6 +87,6 @@ Done when the report is sent.
 
 ## 5. Act on the hand-off
 
-Read `references/hand-off.md` and do what the chosen option asks: write a Fix plan and give the command to type, add the fix to a target spec, or stop. When the user doesn't choose, or chooses to stop, write nothing.
+Read `references/hand-off.md` and do what the chosen option asks: write an Agreed fix block and give the command to type, add the fix to a target spec, or stop. When the user doesn't choose, or chooses to stop, write nothing.
 
 Done when the chosen option is carried out.
