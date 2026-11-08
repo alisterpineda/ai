@@ -1,65 +1,56 @@
 ---
 name: pr-description
-description: Generates a pull-request title and description based on the diff between a source and target branch. Use this skill whenever the user asks to create, write, draft, or generate a PR title, PR description, pull request message, or pull-request summary — even if they phrase it casually like "write me a PR" or "what should the PR say". This is the go-to skill for any PR content generation task.
+description: "Write a pull-request title and description from the diff between a source and target branch. Use whenever the user asks for a PR title, description, or summary, even casually (\"write me a PR\", \"what should the PR say\")."
+
+# Maintainer notes (hosts that strip frontmatter never show these to the model):
+# - The description is written from the cumulative diff and describes the net
+#   result, because reviewers and later readers see the merged state, not the
+#   commits that got there.
+# - The Changes list is short, selective, and light on code names, with one
+#   example per size tier, because earlier examples steered output toward
+#   identifier-heavy nested lists (2eebac7).
+# - "No emoji" in the title and description was cut as default behavior: Opus
+#   doesn't add emoji to PR text unprompted. Restore it if runs start to.
 ---
 
-# PR Description Generator
+# PR description
 
-Generate a pull-request title and formatted description by analyzing the full diff between a source and target branch. The goal is to communicate the **end result** of the changes clearly — not a play-by-play of individual commits.
+## 1. Pick the branches
 
-## Step 1: Determine the branches
+- Source: the current branch (HEAD), unless the user names another.
+- Target: the branch the user names. Otherwise `main`, or `master` when `main` doesn't exist.
+- Confirm which branches you're comparing if there's any ambiguity.
 
-- **Source branch**: Use the current branch (HEAD) unless the user specifies otherwise
-- **Target branch**: Use the branch the user specifies. If they don't, default to `main` — if `main` doesn't exist, fall back to `master`
+The branches are picked when `git rev-parse --verify` succeeds for both.
 
-Confirm which branches you're comparing if there's any ambiguity.
+## 2. Read the net change
 
-## Step 2: Gather the full context
+- Run `git diff <target>...<source>`, `git diff --stat <target>...<source>`, and `git log --oneline <target>..<source>`. The diff is the source of truth; the log only gives narrative context.
+- When the diff is large, read the key changed files directly to see what surrounds the changed code.
+- Describe the state after merging: a function added and later renamed is described only under its final name, and a file edited back and forth only by its net change. Refer to no commits or commit hashes.
 
-Run these git commands to understand the complete picture:
+This step is done when you can say what every file in `--stat` contributes to the net change.
 
-```bash
-# The cumulative diff — this is your primary source of truth
-git diff <target>...<source>
+## 3. Write the title
 
-# Commit history for narrative context
-git log --oneline <target>...<source>
+- Start with the verb in present-tense imperative mood ("Add", "Fix", "Remove"), with no type prefix such as `feat:` or `fix:`.
+- Sentence case, under 60 characters when possible, no trailing period.
+- Name things in plain words: "user authentication", not "`AuthService.ts`".
+- When it adds clarity, hint at the why.
 
-# See which files changed and how much
-git diff --stat <target>...<source>
-```
-
-Read the diff carefully. When the diff is large, also read the key changed files directly to understand the broader context (what the file does, what surrounds the changed code).
-
-**Focus on the end result, not the journey.** If a function was added in one commit and renamed in a later commit, describe only the final state. If a file was modified back and forth across commits, describe only the net change. The PR description should reflect the state of the world after merging — not the sequence of events that got there.
-
-## Step 3: Write the title
-
-Follow the same style as a good commit message title:
-
-- **Present-tense imperative mood** ("Add", "Fix", "Remove" — not "Added", "Fixes")
-- Keep it under 60 characters when possible
-- **Plain language** — describe the change at a human level, avoid code references in the title (write "user authentication" not "`AuthService.ts`")
-- Hint at the **why** when it adds clarity
-- No conventional commit prefixes (`feat:`, `fix:`, etc.)
-- No trailing period
-- Sentence case
-
-## Step 4: Write the description
-
-Structure the description as a markdown codeblock with two sections:
+## 4. Write the description
 
 ### Summary
 
-A short paragraph (2-4 sentences) that explains what this PR does and why. This is the "elevator pitch" — someone skimming PRs should understand the motivation and scope from this alone.
+Two to four sentences on what the PR does and why, enough for someone skimming PRs to understand its motivation and scope. Start with what it does ("Replaces the unbounded query…"), not with "This PR".
 
 ### Changes
 
-A short bullet list for a reviewer about to open the diff, and for someone reading the PR months later. The diff carries the implementation detail; each bullet tells the reader what changed in behavior or capability.
+A short bullet list for a reviewer about to open the diff, and for someone reading the PR months later. The diff carries the implementation; each bullet tells the reader what changed in behavior or capability.
 
-**Selecting changes.** A change earns a bullet when a reviewer would be surprised not to be told about it, or would read the diff differently knowing it. Breaking changes, migrations, and required deploy steps always earn one — they affect people who never open the diff.
+**Selecting changes.** A change earns a bullet when a reviewer would be surprised not to be told about it, or would read the diff differently knowing it. Breaking changes, migrations, and required deploy steps always earn one. Fold mechanical edits (call-site updates, follow-on renames, test fixes) into the change they support.
 
-**Sizing the list.** Size by the number of distinct concerns, not lines changed — a 2,000-line rename is one concern.
+**Sizing the list.** Size by the number of distinct concerns, not files or lines changed: a 2,000-line rename is one concern.
 
 | PR | Shape |
 |---|---|
@@ -67,24 +58,20 @@ A short bullet list for a reviewer about to open the diff, and for someone readi
 | 2–3 concerns | 3–6 flat bullets |
 | Several distinct areas | Grouped: 2–3 groups of 2–3 nested bullets, plus flat bullets for single-change areas |
 
-Hard cap at any size: 6 top-level bullets and 15 bullets in total, counting group headings. When the selected changes exceed it, describe them at a higher level, collapsing related changes into one bullet, until the list fits — and add the split note (see Output format).
+Hard cap at any size: 6 top-level bullets and 15 bullets in total, counting group headings. When the selected changes exceed it, describe them at a higher level, collapsing related changes into one bullet, until the list fits, and add the split note (see Output format).
 
-**Structure.** Write a flat list by default. Group only when several distinct areas each have more than one change worth a bullet: the top-level bullet names the area and the nested bullets give its changes. Areas with a single change sit alongside the groups as flat bullets. Order by importance or logical flow.
+**Structure.** Write a flat list by default. Group only when several distinct areas each have more than one change worth a bullet: the top-level bullet names the area and the nested bullets say what changed in it, without restating the area. Write an area with a single change as one flat bullet alongside the groups. Order by importance or logical flow.
 
 **Wording.**
 - One sentence per bullet, describing one change, in present-tense imperative mood matching the title. Run to a second sentence only when a single sentence can't carry something critical, such as a breaking change's migration path.
 - Add the why as a short clause when the reason isn't obvious.
-- Name code only when the reader will type, call, configure, or search for it: endpoints, CLI flags, config keys, env vars, public API names, table and migration names.
+- Name code only when the reader will type, call, configure, or search for it: endpoints, CLI flags, config keys, env vars, public API names, table and migration names. Describe internal names (private functions, classes, variables) by what the code does.
+
+The description is done when the list fits the cap and its size tier, and no group has a single nested bullet.
 
 ## Output format
 
-Present the result as:
-
-1. The **title** on its own line
-2. A **markdown codeblock** containing the formatted description
-3. **Only when the selected changes exceeded the hard cap:** one line after the codeblock, addressed to the user and not part of the PR, noting that the PR spans N separate concerns and could be split
-
-Like this:
+Present the title on its own line, then the description in a markdown codeblock:
 
 ```
 <the PR title>
@@ -93,7 +80,7 @@ Like this:
 ````markdown
 ## Summary
 
-<2-4 sentence summary of what and why>
+<2-4 sentences on what and why>
 
 ## Changes
 
@@ -113,6 +100,8 @@ A grouped list for a PR spanning several areas:
 - <Single change from another area>
 ````
 
+Only when the selected changes exceeded the hard cap, add one line after the codeblock, addressed to the user and not part of the PR, noting that the PR spans N separate concerns and could be split.
+
 ## Examples
 
 **Example 1** — Small (one concern):
@@ -124,7 +113,7 @@ Fix dark mode not persisting across page reloads
 ````markdown
 ## Summary
 
-The dark mode toggle reset to light mode on every page reload because the component always initialized with the default value instead of reading the stored preference. The theme now loads from the saved preference, falling back to the operating system's color scheme when none is saved.
+Restores the saved theme on page load, falling back to the operating system's color scheme when none is saved. The dark mode toggle had reset to light mode on every reload because the component always initialized with the default value instead of reading the stored preference.
 
 ## Changes
 
@@ -172,15 +161,3 @@ Lets organization admins set up SAML single sign-on so members log in through th
 - Add the `sso_connections` table and `orgs.sso_enforced` column — run the migration before deploying
 - Require a new `SAML_SP_PRIVATE_KEY` env var for signing SAML requests — set it before deploying
 ````
-
-## What to leave out
-
-- No emoji in the title or description
-- Don't list every file that changed — group by logical concern
-- Don't describe intermediate states or back-and-forth changes — only the net result
-- Don't include commit hashes or refer to specific commits
-- Don't add boilerplate like "This PR..." at the start of the summary — just state what it does directly
-- Internal names (private functions, classes, variables) — describe what the code does instead
-- A group with a single nested bullet — write that change as one flat bullet
-- One bullet per mechanical edit (call-site updates, follow-on renames, test fixes) — fold them into the change they support
-- Nested bullets that restate their group heading — the heading names the area, the bullets say what changed
