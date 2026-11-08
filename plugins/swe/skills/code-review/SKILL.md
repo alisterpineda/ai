@@ -48,6 +48,8 @@ From the repository under review, run exactly this one command, with nothing cha
 bash <skill-dir>/scripts/snapshot.sh [--snapshots <dir>] $ARGUMENTS
 ```
 
+The shell tool reports a non-zero exit code itself, so add no `echo $?` or other command to see it.
+
 Pass `$ARGUMENTS` verbatim, in order: the script owns every argument rule, and its message is the user's answer. Add `--snapshots <dir>` when the host has a session scratchpad.
 
 The manifest gives the values every later step uses: `diff:`, `log:` (or `none`), `spec:`, `slice:`, `model:`, `effort:` (`none`, `default`, or `inherit` when not given), the file table, and any uncaptured untracked files.
