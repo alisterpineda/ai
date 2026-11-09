@@ -143,6 +143,15 @@ Fix typo in onboarding email subject line
   EOF
   )"
   ```
+  In PowerShell, which has no heredoc, pipe a single-quoted here-string to `git commit -F -`. Passed with `-m`, a message loses its double quotes in older PowerShell versions. The closing `'@` starts its own line, with no indent:
+  ```powershell
+  $OutputEncoding = [Text.UTF8Encoding]::new($false)
+  @'
+  Title line
+
+  - Body bullet
+  '@ | git commit -F -
+  ```
 - Add `--amend` only when the user asks for it. Never pass `--no-verify` or `-a`/`--all`.
 - If a pre-commit hook fails, fix the problem, re-stage the affected files by name, and make a fresh commit.
 - Run `git log -1 --stat` and `git status`. The commit is done when it contains exactly the intended files and nothing is left half-staged.

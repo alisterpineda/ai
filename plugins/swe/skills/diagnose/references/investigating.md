@@ -40,6 +40,8 @@ When a report says something used to work, find the change that broke it:
    git worktree remove --force '/tmp/tmp.Ab12Cd'
    ```
 
+   In PowerShell, which has no `mktemp`, create the directory with `(New-Item -ItemType Directory (Join-Path $env:TEMP "bisect-$(Get-Random)")).FullName` and use the path it prints.
+
    Never pass `-C` a variable or an empty path. Bisect state belongs to the worktree it ran in, so the user's checkout, index, and branch are never touched. Before a ref from a ticket or report goes into a command, check that `git rev-parse --verify --quiet '<ref>^{commit}'` resolves it. Remove the worktree even when the bisect fails, and say in the report if it couldn't be removed.
 
 The commit you find goes in the group's Root cause section. The commit is evidence, not the mechanism: still explain what in it causes the symptom.

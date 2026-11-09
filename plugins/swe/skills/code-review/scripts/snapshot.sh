@@ -37,7 +37,8 @@
 #                   staged or uncommitted changes)
 #   uncaptured.txt  untracked files that could not be captured, if any
 # Prints a manifest on stdout (the parsed flags included) and never prints the
-# diff or the log.
+# diff or the log. Under Git Bash on Windows the manifest's paths are printed
+# as C:/..., which tools outside the shell can open.
 #
 # An untracked file over $REVIEW_UNTRACKED_MAX_BYTES (default 262144) is left
 # out and listed as uncaptured with its size: it is usually a generated file,
@@ -49,6 +50,13 @@
 set -u
 
 die() { local code=$1; shift; printf 'snapshot: %s\n' "$*" >&2; exit "$code"; }
+
+# Under Git Bash on Windows, turn a path into the C:/... form: the manifest's
+# paths are opened by tools outside this shell, and only MSYS programs resolve
+# /tmp/... or /c/.... Everywhere else there is no cygpath and the path is kept.
+native() {
+  if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s\n' "$1"; fi
+}
 
 flags_help="supported flags: --spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>, in any order around one target"
 log_max_commits="${REVIEW_LOG_MAX_COMMITS:-100}"
@@ -98,7 +106,7 @@ if [ "$have_spec" -eq 1 ]; then
     die 2 "--spec '$spec' is not a GitHub issue or Azure DevOps work-item URL; pass one of those or a file path"
   else
     { [ -f "$spec" ] && [ -r "$spec" ]; } || die 2 "--spec '$spec' is not a readable file"
-    spec_abs="$(cd "$(dirname "$spec")" && pwd)/$(basename "$spec")"
+    spec_abs=$(native "$(cd "$(dirname "$spec")" && pwd)/$(basename "$spec")")
   fi
 fi
 if [ "$have_slice" -eq 1 ]; then
@@ -204,6 +212,7 @@ for root in "${roots[@]}"; do
   snap=""
 done
 [ -n "$snap" ] || die 1 "cannot create a snapshot directory in any of: ${roots[*]}"
+snap=$(native "$snap")
 patch="$snap/diff.patch"
 
 "${git[@]}" "${cmd[@]}" "${diffopts[@]}" > "$patch" || { rm -rf "$snap"; die 1 "git ${cmd[*]} failed"; }

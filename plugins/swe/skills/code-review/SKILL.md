@@ -2,7 +2,7 @@
 # ── Portable (agentskills.io spec) ──
 name: code-review
 description: "Review a diff for bugs, the repo's written standards, and spec conformance, with every finding verified before the report. Report-only; with no target, reviews staged changes, else all uncommitted ones."
-compatibility: "On Claude Code, context: fork runs the review in a background subagent and the report arrives as a notification. Hosts that ignore it run the review in the main conversation. Spawns parallel subagents where the host has a subagent tool, and runs sequential passes otherwise. A ticket URL given as --spec is read by the skill swe:fetch-tickets, called by name. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
+compatibility: "On Claude Code, context: fork runs the review in a background subagent and the report arrives as a notification. Hosts that ignore it run the review in the main conversation. Spawns parallel subagents where the host has a subagent tool, and runs sequential passes otherwise. A ticket URL given as --spec is read by the skill swe:fetch-tickets, called by name. On Windows the script needs Git for Windows' bash. Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions ──
 # disable-model-invocation blocks auto-invocation; only /swe:code-review works.
@@ -47,6 +47,12 @@ From the repository under review, run exactly this one command, with nothing cha
 
 ```
 bash <skill-dir>/scripts/snapshot.sh [--snapshots <dir>] $ARGUMENTS
+```
+
+In PowerShell on Windows, `bash` is missing or is WSL's launcher, which can't run the script. Use the bash that ships with Git for Windows instead, still as one command:
+
+```
+& "$(git --exec-path)\..\..\..\bin\bash.exe" '<skill-dir>\scripts\snapshot.sh' [--snapshots '<dir>'] $ARGUMENTS
 ```
 
 The shell tool reports a non-zero exit code itself, so add no `echo $?` or other command to see it.

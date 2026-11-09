@@ -300,10 +300,29 @@ rm -f spec.md noslices.md
 
 # --- snapshot location ----------------------------------------------------------
 out=$(TMPDIR=/nonexistent/tmp bash "$snapshot" HEAD 2>/dev/null); code=$?   # not run(): its own mktemp needs TMPDIR
-check "unusable TMPDIR falls back to /tmp" '[ $code -eq 0 ] && [[ "$(snapdir)" == /tmp/code-review-snapshot.* ]]'
+tmp_root=/tmp; command -v cygpath >/dev/null 2>&1 && tmp_root=$(cygpath -m /tmp)   # Git Bash prints C:/...
+check "unusable TMPDIR falls back to /tmp" '[ $code -eq 0 ] && [[ "$(snapdir)" == "$tmp_root"/code-review-snapshot.* ]]'
 cleanup_snap
 run --snapshots /nonexistent/dir main
 check "explicit --snapshots that is not a directory exits 2" '[ $code -eq 2 ]'
+
+# --- Windows path form ----------------------------------------------------------
+# A stand-in cygpath that maps every path under a symlink to /, so the mapped
+# paths still open here and the test can see that the manifest used them.
+# Skipped where a real cygpath exists: every other check then runs through it,
+# and Git Bash's `ln -s` copies instead of linking.
+if ! command -v cygpath >/dev/null 2>&1; then
+mkdir "$work/fakebin"; ln -s / "$work/winroot"
+printf '#!/bin/sh\n[ "$1" = -m ] || exit 1\nprintf "%%s\\n" "%s/winroot$2"\n' "$work" > "$work/fakebin/cygpath"
+chmod +x "$work/fakebin/cygpath"
+printf '# A spec\n' > spec.md
+out=$(PATH="$work/fakebin:$PATH" bash "$snapshot" --spec spec.md HEAD 2>/dev/null); code=$?
+check "with cygpath, the snapshot path is printed in its form" '[ $code -eq 0 ] && [[ "$(snapdir)" == "$work/winroot/"*code-review-snapshot.* ]] && [[ "$out" == *"diff: $(snapdir)/numbered.diff"* ]] && [[ "$out" == *"log: $(snapdir)/log.txt"* ]]'
+check "with cygpath, the snapshot files exist at the printed paths" '[ -s "$(snapdir)/numbered.diff" ] && [ -s "$(snapdir)/diff.patch" ]'
+check "with cygpath, the spec path is printed in its form" '[[ "$out" == *"spec: $work/winroot$work/spec.md"* ]]'
+cleanup_snap
+rm -rf "$work/fakebin" "$work/winroot" spec.md
+fi
 
 # --- numbered diff --------------------------------------------------------------
 git checkout -q -b numbering main
