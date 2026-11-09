@@ -15,7 +15,8 @@ background: true
 
 # Maintainer notes (frontmatter never reaches the model):
 # - One skill, not a wrapper plus an engine: the engine split served
-#   /swe:implement, its only other caller, and went when implement did.
+#   the earlier /swe:implement, its only other caller, and went when that did.
+#   Today's implement doesn't call the review.
 #   Split it again when a second skill needs to call the review.
 # - Subagents run in the foreground because a fork receives results only from
 #   foreground subagents; background reviewers would never reach verification.

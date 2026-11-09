@@ -18,10 +18,10 @@ argument-hint: "[target …] [context]"
 #   check script fails when they differ, so edit all three together.
 # - Specs of any shape are planned: derived criteria always go to the user in
 #   step 4, because every step, the review, and /swe:code-review key off them.
-# - The report's first three lines, paste prompt, and review line are fixed so
-#   the user always finds the path, counts, review outcome, prompt, and the
-#   next command in one place. The review line is for the user to type:
-#   /swe:code-review is user-invoked only, so the builder can't run it.
+# - The report's first three lines, build line, and review line are fixed so
+#   the user always finds the path, counts, review outcome, and the next
+#   commands in one place. Both lines are for the user to type:
+#   /swe:implement and /swe:code-review are user-invoked only.
 ---
 
 # Plan
@@ -143,7 +143,7 @@ Start another round when this one fixed anything. Stop when a round fixes nothin
 
 ## 7. Report
 
-Your final message is this template. Keep the wording of its first three lines, the paste prompt, and the review line, filling in the values; word the lines between them yourself.
+Your final message is this template. Keep the wording of its first three lines, the build line, and the review line, filling in the values; word the lines between them yourself.
 
 ````
 Plan: <path>
@@ -153,13 +153,9 @@ Review: <n> rounds[, inline]; <n> findings fixed, <n> rejected, <n> open.
 <the cautious readings, one per line, when there are any>
 <each open finding, with what it found and where, when there are any>
 
-To build it, paste:
-
-```
-Build [slice 1 of ]`<path>` test-first, one step at a time, in order. Mark each step `Done: <YYYY-MM-DD>.` as you finish it.
-```
+To build it: `/swe:implement <path>[ slice 1]`
 
 Once it's built, review it: `/swe:code-review --spec <path>[ --slice <n>]`
 ````
 
-The prompt starts with `slice 1 of `, and the review command ends with ` --slice <n>`, only when the plan has slices. Keep `<n>` literal: the user fills in the slice they just built.
+The build command ends with ` slice 1`, and the review command with ` --slice <n>`, only when the plan has slices. Keep `<n>` literal: the user fills in the slice they just built.
