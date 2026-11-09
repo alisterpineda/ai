@@ -1,4 +1,4 @@
-# tally.sh: the base repository the plan eval fixtures share. A case's
+# tally.sh: the base repository the plan and spec eval fixtures share. A case's
 # fixture.sh sources it, then adds its own files and commits. It builds a
 # tally repo (standard library only, tests run with `make test`) in the
 # current, empty directory, and leaves everything uncommitted.

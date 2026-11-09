@@ -7,7 +7,7 @@ The report must stand on its own for someone who didn't watch the run. Facts onl
 
 Targets: <kind>: <ref>[, <kind>: <ref> …]
 Context: "<context>"                        (when the arguments had context)
-Tree: unchanged | .scratch/ repro files only | instrumentation added and removed, git diff clean
+Tree: unchanged | <scratch dir>/ repro files only | instrumentation added and removed, git diff clean
 <Warning: what was left behind, with the file and its remaining diff.>   (when instrumentation or a worktree couldn't be removed)
 Not read: <ref>: <error>                    (when a target couldn't be fetched)
 

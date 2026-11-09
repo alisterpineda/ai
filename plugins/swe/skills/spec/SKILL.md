@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: spec
-description: "Turn the current conversation into a spec file, under .scratch/ unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions, or the sections of the repo's own spec template. Usage: /swe:spec [context], where context narrows the scope and names the file. User-invoked only."
+description: "Turn the current conversation into a spec file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions, or the sections of the repo's own spec template. Usage: /swe:spec [context], where context narrows the scope and names the file. User-invoked only."
 compatibility: "Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
