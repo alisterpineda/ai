@@ -49,12 +49,12 @@ General-purpose skills, not tied to one domain.
 
 Git-related skills. **Deprecated:** superseded by `swe`. The skills still work but get no further updates; each row names its successor.
 
-On Copilot, uninstall `git-workflow` once `swe` is installed: Copilot keeps only the first skill it finds with a given name, so with both plugins it may load the frozen `commit-message` and `pr-description` instead of `swe`'s.
+On Copilot, uninstall `git-workflow` once `swe` is installed: Copilot keeps only the first skill it finds with a given name, so with both plugins it may load the frozen `commit-message` instead of `swe`'s.
 
 | Skill | Invocation | What it does |
 |---|---|---|
 | `commit-message` | model-invoked | Commit staging discipline and message format conventions. Successor: `swe:commit-message`. |
-| `pr-description` | model-invoked | Generates PR titles and descriptions from a branch diff. Successor: `swe:pr-description`. |
+| `pr-description` | model-invoked | Generates PR titles and descriptions from a branch diff. Successor: `swe:pr-writeup`. |
 | `review` | **user-only**: `/git-workflow:review [--full] [--model <name>] [--effort <level>] [target]` | Adversarial multi-perspective code review — parallel reviewer subagents (correctness, security, maintainability, tests, performance), sharpened by domain lenses (agent instructions, public API, migrations, frontend, infra/CI), plus a skeptic verification pass on every finding. Small diffs get fewer reviewers, with the remaining perspectives folded in; `--full` lifts that cap. Defaults to uncommitted changes; always report-only — apply fixes from the report in the main conversation. Successor: `/swe:code-review`, which doesn't yet cover the separate security, performance, and tests passes or the domain lenses. |
 | `conflict-triage` | **user-only**: `/git-workflow:conflict-triage [--fix] [target]` | Triages conflicts from a merge, rebase, cherry-pick, revert, or stash pop — or predicts them for a GitHub / Azure DevOps pull request — and reports a per-file resolution plan with its risks. Read-only unless `--fix` is passed. No successor. |
 
@@ -79,7 +79,7 @@ Software-engineering workflow skills. Depends on `core`, which Claude Code insta
 | `code-review` | **user-only**: `/swe:code-review [--spec <spec, plan, or ticket URL>] [--slice <n>] [--model <name>] [--effort <level>] [target]` | Reviews a diff in a background subagent along three axes, each run by its own reviewer: correctness (bugs and security basics), standards (the rules in the repo's `CLAUDE.md` / `AGENTS.md` and the files they point to, plus a Fowler code-smell baseline as judgment calls), and spec (an acceptance-criteria table and scope creep, only with `--spec`, which takes a spec or plan file in any format, or a GitHub issue or Azure DevOps work-item URL; `--slice` limits it to one slice, phase, or milestone's criteria, however the spec writes them). A skeptic tries to refute every finding before the report, which has one section per axis. Report-only. With no target, reviews the staged changes, or all uncommitted changes if nothing is staged; otherwise a branch, commit, or commit range. |
 | `fetch-tickets` | model-invoked, hidden from the `/` menu | The ticket reader behind `plan`, `implement`, `diagnose`, and `code-review`: fetches GitHub issues and Azure DevOps work items read-only, marks each author on the project or an outsider, and flags outsiders' text as held back. |
 | `commit-message` | model-invoked | Commit staging discipline and message format conventions. The format follows your request, then the repo's conventions and commit template, then your standing instructions, then a pattern its recent commits share, before the skill's own rules. |
-| `pr-description` | model-invoked | Generates PR titles and descriptions from a branch diff, in the repo's pull-request template or the format its recent PRs share when it has one. |
+| `pr-writeup` | model-invoked | Writes a PR title and description from a branch's net change, in the repo's pull-request template or the format its recent PRs share when it has one, and prints them for pasting; it doesn't open the PR. |
 
 ## Repo structure
 

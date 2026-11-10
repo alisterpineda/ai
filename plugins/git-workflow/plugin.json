@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "git-workflow",
-  "version": "0.22.0",
-  "description": "Deprecated: commit-message and pr-description moved to swe; review is partly superseded by swe:code-review; conflict-triage has no successor. Its skills still work but get no further updates. Git-related skills: commit staging and message conventions, PR title and description generation, adversarial multi-perspective code review, merge/rebase conflict triage and resolution.",
+  "version": "0.22.1",
+  "description": "Deprecated: commit-message and pr-description moved to swe (pr-description as pr-writeup); review is partly superseded by swe:code-review; conflict-triage has no successor. Its skills still work but get no further updates. Git-related skills: commit staging and message conventions, PR title and description generation, adversarial multi-perspective code review, merge/rebase conflict triage and resolution.",
   "author": {
     "name": "Alister Pineda",
     "email": "alister@alisterpineda.com"

@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Deprecated — if swe:pr-description is available, use it instead of this skill. Generates a pull-request title and description based on the diff between a source and target branch. Use this skill whenever the user asks to create, write, draft, or generate a PR title, PR description, pull request message, or pull-request summary — even if they phrase it casually like "write me a PR" or "what should the PR say".
+description: Deprecated — if swe:pr-writeup is available, use it instead of this skill. Generates a pull-request title and description based on the diff between a source and target branch. Use this skill whenever the user asks to create, write, draft, or generate a PR title, PR description, pull request message, or pull-request summary — even if they phrase it casually like "write me a PR" or "what should the PR say".
 ---
 
 # PR Description Generator

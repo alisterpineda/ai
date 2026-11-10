@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: no-trigger-summarize-pr
+tags: [no-trigger]
+plugins: ["../../..", "../../../../core"]
+runs: 1
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 12
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: "A teammate's PR from the add-discount branch is waiting on my review. Summarize what it changes so I know what I'm looking at."

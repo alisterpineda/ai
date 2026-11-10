@@ -1,6 +1,6 @@
 ---
-name: pr-description
-description: "Write a pull-request title and description from the diff between a source and target branch. Use whenever the user asks for a PR title, description, or summary, even casually (\"write me a PR\", \"what should the PR say\")."
+name: pr-writeup
+description: "Write a pull-request title and description for a branch's net change and print them for pasting; it doesn't open the PR. Use whenever the user asks for a PR title, description, or write-up, or needs the text for a PR they're about to open, even casually (\"write me a PR\", \"what should the PR say\"). Not for summarizing or reviewing a PR that already exists."
 
 # Maintainer notes (hosts that strip frontmatter never show these to the model):
 # - The description is written from the cumulative diff and describes the net
@@ -19,7 +19,7 @@ description: "Write a pull-request title and description from the diff between a
 #   doesn't add emoji to PR text unprompted. Restore it if runs start to.
 ---
 
-# PR description
+# PR write-up
 
 ## 1. Pick the branches
 
