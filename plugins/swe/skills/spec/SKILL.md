@@ -18,7 +18,7 @@ argument-hint: "[context]"
 
 # Spec
 
-Synthesize the conversation into a spec file. Everything the spec needs is already in the conversation; whatever is missing becomes an open question.
+Synthesize the conversation into a spec file. What the spec needs and the conversation left unsettled, you ask the user in one round; what is still missing after that becomes an open question.
 
 ARGUMENTS: $ARGUMENTS
 
@@ -28,11 +28,32 @@ The arguments, if any, are the **context**: free text naming the part of the con
 
 Read the latest **Shared understanding** block first, if the conversation has one; it is your primary source. Fill in detail from the rest of the conversation. Where the conversation changed its mind, the later statement wins.
 
-## 2. Path
+## 2. Gaps
+
+Work out what each section of the spec will say before writing the file. A **gap** is anything a section needs that the conversation didn't settle. Handle every gap by its kind:
+
+- **A fact you can look up** (the codebase, files, docs): look it up.
+- **The user's decision**: ask it.
+- **A decision the conversation deferred or declined, or a fact no one in the conversation has**: open question.
+
+Ask every user's-decision gap in one round, then wait for the answers. Number the questions, continuing the conversation's numbering when it has one, and give each its options and a recommendation with its reason:
+
+```
+❓ **Q<n> – <short title>**: <the question>
+
+- **(a) <option>.** <what it means>
+- **(b) <option>.** <what it means>
+
+➡️ **(a).** <why>
+```
+
+An answer becomes a decision. A question the user skips, and a gap their answers open up, becomes an open question: ask one round only. With no user's-decision gaps, go straight to step 3.
+
+## 3. Path
 
 Read `references/path.md` and follow it, with the kind `spec`.
 
-## 3. Write
+## 4. Write
 
 Take the spec's structure from the first source that sets one:
 
@@ -62,19 +83,20 @@ What is wrong or missing today, and for whom.
 <technical detail the conversation settled beyond the decisions: interfaces, schemas, data flow, UI states; leave the section out when it settled none>
 
 ## Acceptance criteria
-1. <observable, checkable outcome>
+1. <observable, checkable outcome> <when derived: (D<n>, D<n>), the decisions it restates>
 
 ## Open questions
 - <question>: <why it matters>
 ```
 
-- **Decisions** carry their reason. A decision the conversation never justified goes in as stated, with an open question asking why.
-- **Acceptance criteria** are numbered, and each one can be checked on its own.
-- **Every line traces to the conversation.** Anything you would have to invent goes to Open questions.
+- **Decisions** carry the reason the conversation gave. A decision it never justified goes in as stated.
+- **Acceptance criteria** are numbered, and each one can be checked on its own. Where the conversation set none, derive them: each restates one or more decisions as an observable outcome. A criterion that needs a value or behavior no decision gives is a gap.
+- **Open questions** are decisions or facts still missing. Work the spec implies outside itself, such as another document it now contradicts, goes in the report.
+- **Every line traces to the conversation or to an answer from step 2.** Anything you would have to invent is a gap.
 - When you name code (modules, files, commands), confirm in the repo that it exists.
 
-## 4. Report
+## 5. Report
 
-Reply with the file path and the count of decisions, criteria, and open questions. If Decisions came out empty, add one line suggesting `core:ideate` to work through the design first.
+Reply with the file path, the count of decisions, criteria, and open questions, and any work the spec implies outside itself. If Decisions came out empty, add one line suggesting `core:ideate` to work through the design first.
 
-Done when the file exists, every in-scope decision from the conversation appears in it, and every gap is an open question.
+Done when the file exists, every in-scope decision from the conversation appears in it, and every gap is answered or an open question.
