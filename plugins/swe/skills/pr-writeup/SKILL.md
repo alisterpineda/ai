@@ -35,6 +35,7 @@ The branches are picked when `git rev-parse --verify` succeeds for both.
 - Run `git diff <target>...<source>`, `git diff --stat <target>...<source>`, and `git log --oneline <target>..<source>`. The diff is the source of truth; the log only gives narrative context.
 - When the diff is large, read the key changed files directly to see what surrounds the changed code.
 - Describe the state after merging: a function added and later renamed is described only under its final name, and a file edited back and forth only by its net change. Refer to no commits or commit hashes.
+- A reviewer has the repository and the tracker, not this conversation. Call things by names found there: ones a committed file explains, or a ticket key. Replace a label from a plan, spec, or review that git doesn't track ("Milestone 1", "step 3", "decision 12", "finding ST2") with what it stands for, or leave it out, even when the diff uses it in a name or comment.
 
 This step is done when you can say what every file in `--stat` contributes to the net change.
 

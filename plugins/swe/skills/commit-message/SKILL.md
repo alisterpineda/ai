@@ -17,6 +17,10 @@ description: "Commit changes: stage the task's files by name, write the message,
 #   bodies short and selective (137437f).
 # - The format order puts the team's conventions, written or evident in
 #   history, over this skill's own rules, which are the fallback.
+# - The lookup rule in Sources exists because a commit made after
+#   /swe:implement was titled "... for Milestone 1", a label from a gitignored
+#   plan. The diff carried the label too (a test name), so "it's in the diff"
+#   is not the test: a committed file has to say what the label means.
 # - "No emoji" in the title and body was cut as default behavior: Opus doesn't
 #   add emoji to commit messages unprompted. Restore it if runs start to.
 ---
@@ -60,6 +64,8 @@ Staging is done when `git diff --cached` shows exactly the task's changes for on
 - Describe what `git diff --cached` contains, not what you remember doing and not changes left unstaged.
 - Take the why from the conversation: what the user asked for, the problem they described, and the reasoning behind decisions. Leave out the request itself and the exchange. When the conversation gives no why, as for changes the user made themselves, leave it out rather than guess.
 - Describe the end state. Write "switch from X to Y" only when X was already in the codebase.
+- Use only names the reader can look up: ones a committed file explains, or a ticket key in the team's tracker. A label that lives only in the conversation or in a file git doesn't track (a plan's "Milestone 1" or "step 3", a spec's "decision 12", a review finding's "ST2") means nothing to them: say what it stands for, or leave it out. A label in the diff counts only when a committed file says what it means.
+- When the staged diff itself carries such a label, in a test name, a comment, or an identifier, tell the user where and ask before committing. Don't edit the code yourself.
 
 ### Title
 
