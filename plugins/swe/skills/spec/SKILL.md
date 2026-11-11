@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: spec
-description: "Turn the current conversation into a spec file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions, or the sections of the repo's own spec template. Usage: /swe:spec [context], where context narrows the scope and names the file. User-invoked only."
+description: "Turn the current conversation into a spec file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: problem, goals, decisions, acceptance criteria, open questions, or the sections of the repo's own spec template. Usage: /swe:spec [context], where context narrows the scope and names the file, or names an existing spec to update. User-invoked only."
 compatibility: "Hosts that ignore disable-model-invocation lose the user-only invocation guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -14,6 +14,9 @@ argument-hint: "[context]"
 #   check script fails when they differ, so edit all three together.
 # - The layout is the default only: /swe:plan, /swe:diagnose, and
 #   /swe:code-review read specs of any shape, so a repo template can replace it.
+# - Updating a spec in place is spec's own exception to path.md's "every run
+#   writes a new file", which stays right for plan and diagnose. Numbers hold
+#   across an update because plans cite criteria by number.
 ---
 
 # Spec
@@ -24,7 +27,7 @@ ARGUMENTS: $ARGUMENTS
 
 ## 1. Scope
 
-The arguments, if any, are the **context**: free text naming the part of the conversation to spec. With a context, spec only that part. Without one, spec the whole conversation.
+The arguments, if any, are the **context**: free text naming the part of the conversation to spec. With a context, spec only that part. Without one, spec the whole conversation. A context can also name an existing spec to update: that file is then a source alongside the conversation.
 
 Read the latest **Shared understanding** block first, if the conversation has one; it is your primary source. Fill in detail from the rest of the conversation. Where the conversation changed its mind, the later statement wins.
 
@@ -51,7 +54,14 @@ An answer becomes a decision. A question the user skips, and a gap their answers
 
 ## 3. Path
 
-Read `references/path.md` and follow it, with the kind `spec`.
+This run is an **update** in two cases, and the path is then that file:
+
+- The context names an existing spec to update.
+- This conversation wrote a spec, or worked through one's open questions, and this run's scope is the same as that spec's.
+
+A spec the context names for another purpose, such as a format to follow, is read, and the run writes a new file.
+
+Otherwise read `references/path.md` and follow it, with the kind `spec`.
 
 ## 4. Write
 
@@ -95,8 +105,19 @@ What is wrong or missing today, and for whom.
 - **Every line traces to the conversation or to an answer from step 2.** Anything you would have to invent is a gap.
 - When you name code (modules, files, commands), confirm in the repo that it exists.
 
+On an update, edit the file in place and keep its structure:
+
+- A settled open question leaves Open questions and joins Decisions, and the criteria it yields join Acceptance criteria.
+- A reversed decision is rewritten where it stands, with every criterion and Design line that restated it.
+- Existing decisions and criteria keep their numbers; new ones take the next number.
+- Source gains what the update was built from.
+
 ## 5. Report
 
 Reply with the file path, the count of decisions, criteria, and open questions, and any work the spec implies outside itself. If Decisions came out empty, add one line suggesting `core:ideate` to work through the design first.
 
 Done when the file exists, every in-scope decision from the conversation appears in it, and every gap is answered or an open question.
+
+## 6. Later answers
+
+When the user, later in this conversation, settles one of the spec's open questions or reverses one of its decisions, update the file as step 4 describes, then report the new counts.
