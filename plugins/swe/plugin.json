@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "swe",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Software-engineering workflow skills: diagnose bugs from tickets, specs, or a description down to their root cause, turn a design conversation into a spec file, plan how to build a spec, tickets, or an agreed design against the real code, step by step with the test each step writes first, implement it with the session's model orchestrating worker subagents on a cheaper model, review code for correctness, the repo's written standards, and conformance to a spec, then commit with staging and message conventions and write the PR title and description.",
   "author": {
     "name": "Alister Pineda",
