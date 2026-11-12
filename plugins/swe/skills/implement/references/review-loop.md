@@ -29,11 +29,12 @@ Take each confirmed finding in the report's order and do the first of these that
 1. **The same finding as one you deferred or left unfixed**: its entry stays as it is.
 2. **The same finding as one you fixed**: the fix didn't hold. Mark it unfixed and leave the code as it is.
 3. **This is the third review**: mark it unfixed, as found by the last review. A fix made now would reach the tree unreviewed.
-4. **Its site is in a file from the starting changes that no unit of this run changed**: defer it as in the tree before this run.
+4. **Its site is in a file from the starting changes that no unit of this run changed**: defer it as in the tree before this run. A file a unit changed is the run's work as a whole, the lines that were there at the start included: a finding anywhere in it goes on to the next rule.
 5. **Its fix needs the user's choice**: defer it, with the choice in one sentence. A fix needs a choice when:
    - the ways to fix it differ in behavior a user could observe, and neither the source nor the code around it settles which;
    - it would contradict a decision or criterion the source states;
-   - it is new work the source doesn't describe, or work the source gives to a later slice or step.
+   - it is new work the source doesn't describe, or work the source gives to a later slice or step;
+   - it would remove code that was in the starting changes, or rewrite it beyond correcting the defect. Code the source doesn't ask for that was there at the start is the user's to keep or drop.
 6. **Otherwise fix it yourself**, whatever its severity. The finding's suggested fix is a starting point. Where the repo tests that area, the fix comes with a test that fails without it. A finding's ID is one of the source's labels and stays out of the repo.
 
 When this review led to no fix that is still in the tree, the loop ends. Otherwise run the project's checks, then the next review. A failure your fixes caused is yours to fix; when a fix still fails the checks after three attempts, undo that fix and mark its finding unfixed.
