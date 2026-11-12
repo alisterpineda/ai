@@ -7,8 +7,9 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 # ── Non-spec extension, honored by Claude Code and GitHub Copilot ──
 # Hidden from the / menu but model-invocable, so other skills can call it.
 # No context: fork: it runs in whatever context invokes it, and each caller
-# chooses its own isolation (/swe:code-review a background fork,
-# /swe:implement a foreground subagent).
+# chooses its own isolation (/swe:code-review a background fork, or a
+# foreground subagent on a host without one; /swe:implement a foreground
+# subagent).
 
 # Maintainer notes (frontmatter never reaches the model):
 # - An engine apart from /swe:code-review because two user-invoked skills
