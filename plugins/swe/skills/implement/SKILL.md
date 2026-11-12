@@ -70,7 +70,7 @@ For tickets, fetch every URL in one call to the skill `swe:fetch-tickets`, by na
 
 A unit is one piece of work small enough to build and check in one go.
 
-- **A plan with numbered steps**: each step not marked `Done:` is a unit, in the plan's order, as written. When the plan has slices and the context names none, build the first slice with an unfinished step and stop there. A step is marked only once its work is committed (step 7), so an unmarked step's work may already be in the tree or in a commit. Don't rebuild that work: run step 4 on what is there and build only what is missing. When it passes and is already committed, mark the step as step 7 says.
+- **A plan with numbered steps**: each step not marked `Done:` is a unit, in the plan's order, as written. When the plan has slices and the context names none, build the first slice with an unfinished step and stop there. A slice's steps are the ones under its heading, or the ones tagged with its number. A step is marked only once its work is committed (step 7), so an unmarked step's work may already be in the tree or in a commit. Don't rebuild that work: run step 4 on what is there and build only what is missing. When it passes and is already committed, mark the step as step 7 says.
 - **Anything else**: read the code the work lands in, then list the units in a message before building: numbered, in build order, each with what it does, the files it touches, and the check that shows it done. Each unit builds only on code that exists or an earlier unit makes. Write no plan file.
 
 Find the project's checks (test, lint, typecheck) in the plan's `## Checks`, else in the repo's instructions, package scripts, Makefile, or CI config.

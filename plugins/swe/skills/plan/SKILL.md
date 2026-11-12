@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: plan
-description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against their official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices a user would notice: once before drafting, and again only when a review finding needs one. An independent subagent reviews the plan, up to 3 rounds. Changes no code. Usage: /swe:plan [target …] [context]. User-invoked only."
+description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against their official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session or when asked, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices a user would notice: once before drafting, and again only when a review finding needs one. An independent subagent reviews the plan, up to 3 rounds. Changes no code. Usage: /swe:plan [target …] [context]. User-invoked only."
 compatibility: "Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. Research, the ticket fetch, and the review run in subagents, or inline on hosts without one. Official docs need web access; without it the facts they would settle are listed as unverified. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -11,9 +11,13 @@ disable-model-invocation: true
 argument-hint: "[target …] [context]"
 
 # Maintainer notes (frontmatter never reaches the model):
-# - A slice's line stays on one line so `/swe:code-review --spec <plan>
-#   --slice <n>` finds its criteria at a glance; the review reads slices in
-#   any shape, so this is the easy case, not a contract.
+# - Steps sit under their slice's heading, so a slice's steps and their order
+#   are the layout's, not a tag on each step that can disagree with it. The
+#   name stays "slice" (a vertical slice): "phase" draws setup/core/polish
+#   layers that deliver no whole criterion.
+# - A slice's `Delivers criteria` line stays on one line so `/swe:code-review
+#   --spec <plan> --slice <n>` finds its criteria at a glance; the review
+#   reads slices in any shape, so this is the easy case, not a contract.
 # - references/path.md has identical copies in spec and diagnose; the repo's
 #   check script fails when they differ, so edit all three together.
 # - Specs of any shape are planned: derived criteria always go to the user in
@@ -132,11 +136,12 @@ Source: <spec path[, criteria <numbers>] | ticket refs | the conversation's Shar
 ## Checks
 - <test | lint | typecheck>: `<command>` | not configured
 
-## Slices
-1. <name>: <what it delivers end to end>. Criteria: <numbers>
-
 ## Steps
-1. <what the step does>. Criteria: <numbers | support for <n>>[. Slice: <n>]
+
+### Slice <n>: <name>
+Delivers criteria <numbers>: <what it delivers end to end>
+
+1. <what the step does>. Criteria: <numbers | support for <n>>
    - Files: `<path>` (`<symbol>`, …)
    - Relies on: <external fact> (<URL | installed file path | unverified>)
    - Test first: `<test file>` `<test name>`, through `<seam>`: <what it asserts>
@@ -149,7 +154,7 @@ Source: <spec path[, criteria <numbers>] | ticket refs | the conversation's Shar
 - **Relies on** appears only on a step that depends on an external fact from step 3, one line per fact, with the evidence found for it. An unverified fact is also listed under Cautious readings.
 - **Test first.** The seam is the most public interface where the criterion's behavior shows and the existing tests already reach: a caller-facing signature, a CLI, a request handler, never a private helper. The test follows the repo's framework and layout, and asserts the behavior the criterion names, not how the code gets there. Name the test for that behavior, never for the plan's own labels (a milestone, slice, step, or criterion number): the name is committed, and the plan may not be. When no automated test can check the step (documentation, a configuration value, copy), write `Test first: none, <why>`, and make Done when say what to read or run to see it.
 - **Done when** names the command and its expected result: the step's test passes and the project checks stay green.
-- **Slices** appear only when the steps won't fit in one agent session. Each delivers whole criteria end to end, its steps say `Slice: <n>`, and its line stays on one line. Without slices, leave the section out.
+- **Slices** appear only when the steps won't fit in one agent session, or when the context asks for them. Each delivers whole criteria end to end: its steps name every criterion on its `Delivers criteria` line and no other slice's, and a supporting step sits in the slice of the criterion it supports. Every step sits under a slice's heading, in build order, and step numbers run on from one slice to the next. The `Delivers criteria` line stays on one line. Without slices, leave out the slice headings and their `Delivers criteria` lines: the steps follow `## Steps` directly.
 - A step is marked done once its work is committed, by appending ` Done: <YYYY-MM-DD>, <commit sha>.` to its first line. A slice is done when all its steps are.
 
 ## 6. Review
