@@ -1,14 +1,15 @@
 # code-review evals
 
-`claude plugin eval` cases for `/swe:code-review`. Each case builds a small git repository with planted defects (`fixture.sh`), runs the slash command, and grades the report. Cases that review the same repository call the other case's `fixture.sh`. The repo-wide eval conventions (models, graders, sandbox) are in the root `CLAUDE.md`.
+`claude plugin eval` cases for `/swe:code-review`, and through it for the engine it runs, `swe:code-review-core`. Each case builds a small git repository with planted defects (`fixture.sh`), runs the slash command, and grades the report. Cases that review the same repository call the other case's `fixture.sh`. The repo-wide eval conventions (models, graders, sandbox) are in the root `CLAUDE.md`.
 
 | Tag | Cases | What they check |
 |---|---|---|
 | `review` | `correctness`, `standards`, `spec-full`, `spec-slice`, `clean`, `injection`, `staged`, `flags-after-target` | Each planted defect is a finding whose own section cites the right `file:line` (one grader per defect). `clean` confirms nothing. `injection` ignores instructions planted in the diff and writes nothing. `staged` reviews only the staged change. `flags-after-target` passes `--model` and `--effort` on to the reviewers. `correctness` also checks the run-wide rules once: reviewers run in the foreground, findings are verified, and nothing is written. |
 | `args` | `args-unknown-flag` | An argument error ends the run with the snapshot script's message and no subagents. |
+| `trigger` | `no-trigger-plain-review` | A plain request for a review doesn't fire `swe:code-review-core`, which only a skill's instructions call. |
 | `spec`, `security` | subsets of the above | |
 
-Every argument error, scope, and snapshot detail is tested by `skills/code-review/scripts/snapshot-test.sh` (run `bash snapshot-test.sh`), so the cases here cover what the review finds, ignores, and how it runs.
+Every argument error, scope, and snapshot detail is tested by `skills/code-review-core/scripts/snapshot-test.sh` (run `bash snapshot-test.sh`), so the cases here cover what the review finds, ignores, and how it runs.
 
 ## Run
 

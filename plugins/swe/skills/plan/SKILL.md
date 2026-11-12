@@ -18,10 +18,11 @@ argument-hint: "[target …] [context]"
 #   check script fails when they differ, so edit all three together.
 # - Specs of any shape are planned: derived criteria always go to the user in
 #   step 4, because every step, the review, and /swe:code-review key off them.
-# - The report's first three lines, build line, and review line are fixed so
-#   the user always finds the path, counts, review outcome, and the next
-#   commands in one place. Both lines are for the user to type:
-#   /swe:implement and /swe:code-review are user-invoked only.
+# - The report's first three lines and build line are fixed so the user
+#   always finds the path, counts, review outcome, and the next command in
+#   one place. The build line is for the user to type: /swe:implement is
+#   user-invoked only. It reviews what it builds, so the report names no
+#   separate review command.
 # - Research and the ticket fetch run in subagents to keep what they read
 #   (repo exploration, docs pages, raw tracker output) out of this context.
 #   The fetch's result still carries held-back text, so step 4's rule stands.
@@ -163,7 +164,7 @@ Start another round when this one fixed anything. Stop when a round fixes nothin
 
 ## 7. Report
 
-Your final message is this template. Keep the wording of its first three lines, the build line, and the review line, filling in the values; word the lines between them yourself.
+Your final message is this template. Keep the wording of its first three lines and the build line, filling in the values; word the lines between them yourself.
 
 ````
 Plan: <path>
@@ -174,8 +175,6 @@ Review: <n> rounds[, inline]; <n> findings fixed, <n> rejected, <n> open.
 <each open finding, with what it found and where, when there are any>
 
 To build it: `/swe:implement <path>[ slice 1]`
-
-Once it's built, review it: `/swe:code-review --spec <path>[ --slice <n>]`
 ````
 
-The build command ends with ` slice 1`, and the review command with ` --slice <n>`, only when the plan has slices. Keep `<n>` literal: the user fills in the slice they just built.
+The build command ends with ` slice 1` only when the plan has slices.
