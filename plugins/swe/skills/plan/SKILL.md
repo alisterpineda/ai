@@ -129,7 +129,7 @@ Source: <spec path[, criteria <numbers>] | ticket refs | the conversation's Shar
 - **Test first.** The seam is the most public interface where the criterion's behavior shows and the existing tests already reach: a caller-facing signature, a CLI, a request handler, never a private helper. The test follows the repo's framework and layout, and asserts the behavior the criterion names, not how the code gets there. Name the test for that behavior, never for the plan's own labels (a milestone, slice, step, or criterion number): the name is committed, and the plan may not be. When no automated test can check the step (documentation, a configuration value, copy), write `Test first: none, <why>`, and make Done when say what to read or run to see it.
 - **Done when** names the command and its expected result: the step's test passes and the project checks stay green.
 - **Slices** appear only when the steps won't fit in one agent session. Each delivers whole criteria end to end, its steps say `Slice: <n>`, and its line stays on one line. Without slices, leave the section out.
-- A step is marked done by appending ` Done: <YYYY-MM-DD>.` to its first line. A slice is done when all its steps are.
+- A step is marked done once its work is committed, by appending ` Done: <YYYY-MM-DD>, <commit sha>.` to its first line. A slice is done when all its steps are.
 
 ## 6. Review
 

@@ -22,6 +22,10 @@ argument-hint: "[--worker-model <name>] [target …] [context]"
 #   context small; --worker-model picks something cheaper.
 # - Worker rules live in references/worker.md, the one file a worker reads, so
 #   the orchestrator's prompt carries the unit and paths only.
+# - A plan step is marked Done only after its commit, with the sha, so a mark
+#   never outlives code that a rewind or `git restore` took away (the plan is
+#   usually gitignored and survives both). Uncommitted work from an earlier
+#   run is found by reading the tree, not by a second mark.
 # - /swe:plan's report gives the /swe:implement command, and the report here
 #   gives the /swe:code-review line for the user to type: both skills are
 #   user-invoked, so neither can call the other.
@@ -56,7 +60,7 @@ For tickets, fetch every URL in one call to the skill `swe:fetch-tickets`, by na
 
 A unit is one piece of work small enough to build and check in one go.
 
-- **A plan with numbered steps**: each step not marked `Done:` is a unit, in the plan's order, as written. When the plan has slices and the context names none, build the first slice with an unfinished step and stop there.
+- **A plan with numbered steps**: each step not marked `Done:` is a unit, in the plan's order, as written. When the plan has slices and the context names none, build the first slice with an unfinished step and stop there. A step is marked only once its work is committed (step 6), so an unmarked step's work may already be in the tree or in a commit. Don't rebuild that work: run step 4 on what is there and build only what is missing. When it passes and is already committed, mark the step as step 6 says.
 - **Anything else**: read the code the work lands in, then list the units in a message before building: numbered, in build order, each with what it does, the files it touches, and the check that shows it done. Each unit builds only on code that exists or an earlier unit makes. Write no plan file.
 
 Find the project's checks (test, lint, typecheck) in the plan's `## Checks`, else in the repo's instructions, package scripts, Makefile, or CI config.
@@ -97,7 +101,7 @@ When a worker returns `Status: blocked`, skip the checks and the re-brief. A blo
 
 When a worker's unit fails, send the same worker what failed, once: the command and its output, or the criterion and the lines that miss it. Continue that worker where the host allows, else start a fresh one with the original prompt plus the failure. Check again. When it fails a second time, fix the unit yourself. When your own work fails, fix it. A unit you can't get to pass after three attempts of your own ends the run: go to step 5 and report it as the stop.
 
-When the unit passes and it is a plan step, append ` Done: <YYYY-MM-DD>.` to the step's first line in the plan, with today's date, and change nothing else there.
+A passing plan step stays unmarked in the plan until its work is committed (step 6).
 
 ## 5. Report
 
@@ -116,9 +120,16 @@ Workers: <n> delegated to <worker model>, <n> built by the session, <n> taken ov
 <the stop, when a unit ended the run: the unit, what failed, what you tried>
 
 Everything is uncommitted and unstaged.
+<when the source is a plan with steps: The plan's steps are still unmarked. Commit this work in this conversation and I'll mark the ones that passed `Done:` with the commit.>
 <when the index holds staged changes: The review below reads only staged changes while any exist, so stage this run's files or unstage the rest first.>
 
 Review it: `/swe:code-review --spec <path>[ --slice <n>]`
 ````
 
 Run `git diff --cached --quiet` to see whether the index holds staged changes. The review line appears when the source is a file, and ends with ` --slice <n>` when the run built one slice of a plan. When slices remain, add the command for the next one: `/swe:implement <path> slice <n>`.
+
+## 6. Mark the plan after a commit
+
+This step outlasts the report, and applies only when the source is a plan with numbered steps. You still never commit: the commit is the user's, made by them or by a skill they invoke.
+
+When a commit made later in this conversation holds the work of a step that passed step 4, append ` Done: <YYYY-MM-DD>, <sha>.` to the step's first line in the plan, and change nothing else there. Take both values from `git log -1 --format='%cs, %h' <commit>`. Mark a step only when all of its work is committed: one with changes still in the tree stays unmarked, and so does one whose check failed, however it was committed. When a step's work spans several commits, use the last one.
