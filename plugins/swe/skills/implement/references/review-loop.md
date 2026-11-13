@@ -41,7 +41,7 @@ When this review led to no fix that is still in the tree, the loop ends. Otherwi
 
 ## Record for the report
 
-Keep, for step 6: how many reviews reported and how the loop ended, and each ledger entry with its state, the files a fix changed, and the reason it was deferred or left unfixed.
+Keep, for steps 6 and 7: how many reviews reported and how the loop ended, and each ledger entry with its state, the files a fix changed, and the reason it was deferred or left unfixed.
 
 The loop ended, by the first of these that fits:
 

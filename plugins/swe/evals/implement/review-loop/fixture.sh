@@ -5,7 +5,8 @@ source "$(dirname "$0")/../../plan/tally.sh"
 # tally/stats.py, a file no unit of the build touches, whose function divides
 # by zero on the empty list its docstring promises to handle. The review reads
 # it with the run's work; the loop must defer its finding as in the tree
-# before the run, and leave the file as it is.
+# before the run, and leave the file as it is. The commit that follows a clean
+# review holds the run's files only, so stats.py stays out of it.
 top_words_spec
 commit "tally with top-words spec"
 cat > tally/stats.py <<'PY'

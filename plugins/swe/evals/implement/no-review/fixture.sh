@@ -2,6 +2,7 @@
 # Builds this case's repository in the current (empty) directory.
 source "$(dirname "$0")/../../plan/tally.sh"
 # The settled top-words spec, built with --no-review: no review may start,
-# and the report hands over the /swe:code-review command instead.
+# the work stays uncommitted, and the report hands over the /swe:code-review
+# command instead.
 top_words_spec
 commit "tally with top-words spec"

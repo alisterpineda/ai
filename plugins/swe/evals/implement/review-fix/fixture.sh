@@ -6,7 +6,8 @@ source "$(dirname "$0")/../../plan/tally.sh"
 # distinct_words counts every word, repeats included and case kept, though
 # its docstring promises distinct words ignoring case. The run touches the
 # file, so the review's finding is the run's to fix, and a fix means a second
-# review.
+# review. The run changed a file that already held the user's edits, so it
+# must not commit.
 top_words_spec
 commit "tally with top-words spec"
 cat >> tally/counter.py <<'PY'
