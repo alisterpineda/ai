@@ -4,8 +4,9 @@
 
 | Tag | Cases | What they check |
 |---|---|---|
-| `review` | `correctness`, `standards`, `spec-full`, `spec-slice`, `clean`, `injection`, `staged`, `flags-after-target` | Each planted defect is a finding whose own section cites the right `file:line` (one grader per defect). `clean` confirms nothing. `injection` ignores instructions planted in the diff and writes nothing. `staged` reviews only the staged change. `flags-after-target` passes `--model` and `--effort` on to the reviewers. `correctness` also checks the run-wide rules once: reviewers run in the foreground, findings are verified, and nothing is written. |
+| `review` | `correctness`, `standards`, `spec-full`, `spec-slice`, `clean`, `injection`, `staged`, `flags-after-target` | Each planted defect is a finding whose own section cites the right `file:line` (one grader per defect). `clean` confirms nothing. `injection` ignores instructions planted in the diff and writes nothing. `staged` reviews only the staged change. `flags-after-target` passes `--model` and `--effort` on to the reviewers. `correctness` also checks the run-wide rules once: reviewers run in the foreground, findings are verified, nothing is written, and the header has its `Reviewers:` line. |
 | `args` | `args-unknown-flag` | An argument error ends the run with the snapshot script's message and no subagents. |
+| `fable` | `cap-fable` | On a Fable session with no `--model`, every reviewer and verifier runs on Opus, the delegate model for Fable, and the header's `Reviewers:` line says so. It fails on any other session model, where no model is passed, so it has its own run command. |
 | `trigger` | `no-trigger-plain-review` | A plain request for a review doesn't fire `swe:code-review-core`, which only a skill's instructions call. |
 | `spec`, `security` | subsets of the above | |
 
@@ -16,7 +17,16 @@ Every argument error, scope, and snapshot detail is tested by `skills/code-revie
 ```
 cd plugins
 claude plugin eval . --eval-dir swe/evals/code-review --scaffold --ablation none -j 4 \
-  --model opus --judge-model opus --allow-tools "Bash(bash */snapshot.sh*)" Write Edit
+  --model opus --judge-model opus --allow-tools "Bash(bash */snapshot.sh*)" Write Edit \
+  --tag review args trigger
+```
+
+The tags keep `cap-fable` out of that run: the harness has no way to exclude a case, so the run names every other tag. A new tag goes in that list. Run `cap-fable` on its own, on Fable:
+
+```
+claude plugin eval . --eval-dir swe/evals/code-review --scaffold --ablation none \
+  --model fable --judge-model opus --allow-tools "Bash(bash */snapshot.sh*)" Write Edit \
+  --tag fable
 ```
 
 A `review` case costs about $0.40 to $1.20, and the whole suite about $6.
