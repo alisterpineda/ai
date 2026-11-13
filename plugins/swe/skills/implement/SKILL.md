@@ -1,14 +1,14 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: implement
-description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands each well-specified unit to a worker subagent on a cheaper model, builds the tiny and the judgment-heavy ones itself, and checks every unit itself before the next starts. It then reviews the result with swe:code-review-core, fixes the findings that need no choice from the user, and reviews again, up to 3 reviews; --no-review skips that. Leaves every change uncommitted. Usage: /swe:implement [--worker-model <name>] [--no-review] [target …] [context]. User-invoked only."
-compatibility: "Workers need a subagent tool that takes a model; without one the session builds every unit itself. Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. The review runs the skill swe:code-review-core, called by name in a subagent, or inline on hosts without one; where it can't be reached the run skips the review. Hosts that ignore disable-model-invocation lose the user-only guarantee."
+description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands each well-specified unit to a worker subagent, builds the tiny and the judgment-heavy ones itself, and checks every unit itself before the next starts. It then reviews the result with swe:code-review-core, fixes the findings that need no choice from the user, and reviews again, up to 3 reviews; --no-review skips that. Workers and reviews run on the session's model, or on the tier below when the session's is the vendor's top one. Leaves every change uncommitted. Usage: /swe:implement [--worker-model <name>] [--review-model <name>] [--review-effort <level>] [--no-review] [target …] [context]. User-invoked only."
+compatibility: "Workers need a subagent tool, else the session builds every unit; where it takes no model, workers and reviews use the session's. Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. The review runs the skill swe:code-review-core, called by name in a subagent, or inline without one; unreachable, the review is skipped. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
 # Blocks auto-invocation; only /swe:implement works. Runs inline, without
 # context: fork, so the user sees the run and can answer its questions.
 disable-model-invocation: true
-argument-hint: "[--worker-model <name>] [--no-review] [target …] [context]"
+argument-hint: "[--worker-model <name>] [--review-model <name>] [--review-effort <level>] [--no-review] [target …] [context]"
 
 # Maintainer notes (frontmatter never reaches the model):
 # - Deliberately small. The earlier implement (removed in 2.0.0) carried a
@@ -25,9 +25,17 @@ argument-hint: "[--worker-model <name>] [--no-review] [target …] [context]"
 #   changes would narrow it to the index, hence the skip in step 5.
 # - Units run one at a time in the one working tree so a red check points at
 #   one unit. No parallel workers and no worktrees.
-# - The worker default is opus because the skill is meant for a session on a
-#   model above it. On an Opus session workers still keep the conversation's
-#   context small; --worker-model picks something cheaper.
+# - Workers and reviews default to the delegate model in
+#   references/delegate-model.md. It is a cap, not a step down: a session on
+#   a vendor's top model delegates to the tier below, and any other session
+#   delegates to its own model, where workers still keep the conversation's
+#   context small. The table names models per vendor because Copilot runs
+#   this skill on other vendors' models. code-review-core holds a copy of the
+#   file, and the check script fails when the two differ.
+# - Effort is inherited from the session unless --review-effort names one:
+#   effort levels don't map across vendors, so there is no table for them.
+# - The review's model sits on its own report line so the `Review:` line the
+#   evals match keeps its shape.
 # - Worker rules live in references/worker.md, the one file a worker reads, so
 #   the orchestrator's prompt carries the unit and paths only.
 # - A plan step is marked Done only after its commit, with the sha, so a mark
@@ -55,9 +63,13 @@ ARGUMENTS: $ARGUMENTS
 
 ## 1. Read the arguments
 
-- **`--worker-model <name>`** sets the model workers run on; without it, `opus`.
+- **`--worker-model <name>`** sets the **worker model**, the model workers run on.
+- **`--review-model <name>`** sets the **review model**, the model step 5's reviews run on.
+- **`--review-effort <level>`** sets the effort of those reviews: `low`, `medium`, `high`, `xhigh`, or `max`. Without it they run at the session's effort, as workers always do.
 - **`--no-review`** skips step 5.
-- Any other word starting with `--`, or `--worker-model` with no name, stops the run before anything is read or built, even a flag that asks for what the run does anyway. The final message then starts with this line: `/swe:implement takes two flags: --worker-model <name> and --no-review.`
+- Any other word starting with `--`, one of the first three flags with no value, or `--review-effort` with another level, stops the run before anything is read or built, even a flag that asks for what the run does anyway. The final message then starts with this line: `/swe:implement takes four flags: --worker-model <name>, --review-model <name>, --review-effort <level>, and --no-review.`
+
+A model no flag set, or one the subagent tool rejects, is the delegate model: read `references/delegate-model.md` for it.
 - **Targets** come first: one path to an existing file that states what to build (a plan, a spec, any format), or one or more GitHub issue or Azure DevOps work-item URLs.
 - **Context** is the rest, from the first word that isn't a target. It narrows what gets built ("slice 2", "steps 4 to 6", "only the CLI part").
 - With no target, the source is the **conversation**: its latest plan, Shared understanding, or Agreed fix, or else what it agreed on. If it agreed on nothing, stop and ask what to build.
@@ -88,7 +100,7 @@ Before building, run `git status --porcelain` and keep its output: the **startin
 
 Take the units one at a time, in order. Finish step 4 for a unit before starting the next.
 
-**Delegate** a unit when its outcome, files, and check are all stated and a worker could build it from the brief alone. **Build it yourself** when the edit is smaller than its brief would be, or when it needs judgment the brief can't carry: a design choice, a change that cuts across units, code whose shape depends on what you learned building earlier units. Without a subagent tool that takes a model, build every unit yourself.
+**Delegate** a unit when its outcome, files, and check are all stated and a worker could build it from the brief alone. **Build it yourself** when the edit is smaller than its brief would be, or when it needs judgment the brief can't carry: a design choice, a change that cuts across units, code whose shape depends on what you learned building earlier units. Without a subagent tool, build every unit yourself.
 
 To delegate, start one subagent on the worker model and wait for its result before doing anything else. Its prompt holds:
 
@@ -142,6 +154,7 @@ Workers: <n> delegated to <worker model>, <n> built by the session, <n> taken ov
 <the stop, when a unit ended the run: the unit, what failed, what you tried>
 
 Review: <n> reviews, <clean | nothing left to fix | stopped at the limit | review <n> did not report: <why>>; <n> findings fixed, <n> deferred, <n> unfixed | skipped: <--no-review | a unit ended the run | the index holds staged changes | <why the first review did not report>>
+<when the review ran: Review model: <review model>[, <level> effort]>
 
 <when the review ran, each list that has entries>
 Fixed:

@@ -4,10 +4,10 @@ Review the run's work, fix the findings that need no choice from the user, and r
 
 ## Run a review
 
-Start one general-purpose subagent in the foreground (on Claude Code, `run_in_background: false`) and wait for its result before doing anything else. Its prompt holds:
+Start one general-purpose subagent on the review model, at the `--review-effort` level when the arguments gave one, in the foreground (on Claude Code, `run_in_background: false`), and wait for its result before doing anything else. Its prompt holds:
 
 - the repository's absolute path, to work from;
-- to invoke the skill `swe:code-review-core`, by name, and follow it to the end, with these arguments and no target: `--spec <the source's absolute path>` when the source is a file, then `--slice <n>` when the run built one slice of a plan;
+- to invoke the skill `swe:code-review-core`, by name, and follow it to the end, with these arguments and no target: `--spec <the source's absolute path>` when the source is a file, then `--slice <n>` when the run built one slice of a plan, `--model <name>` when the arguments held `--review-model`, and `--effort <level>` when they held `--review-effort`;
 - that its final message is the review's report, or the message that stopped the review, word for word.
 
 Without a subagent tool, invoke `swe:code-review-core` yourself, by name, with the same arguments. When it hands its report back, continue here.

@@ -2,7 +2,7 @@
 # ── Portable (agentskills.io spec) ──
 name: code-review-core
 description: "Code review engine for other skills: verified findings on a diff's correctness, the repo's written standards, and spec conformance, report-only. Call it when a skill's instructions name it, with /swe:code-review's arguments."
-compatibility: "Spawns parallel subagents where the host has a subagent tool, and runs sequential passes otherwise. A ticket URL given as --spec is read by the skill swe:fetch-tickets, called by name. On Windows the script needs Git for Windows' bash. Hosts that ignore user-invocable list it as a command too."
+compatibility: "Spawns parallel subagents where the host has a subagent tool, and runs sequential passes otherwise. Without --model they run on the session's model, or on the tier below when the session's is the vendor's top one and the tool takes a model. A ticket URL given as --spec is read by the skill swe:fetch-tickets, called by name. On Windows the script needs Git for Windows' bash. Hosts that ignore user-invocable list it as a command too."
 
 # ── Non-spec extension, honored by Claude Code and GitHub Copilot ──
 # Hidden from the / menu but model-invocable, so other skills can call it.
@@ -26,6 +26,10 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 # - A ticket spec that needs a paste ends the run: a background fork can't
 #   wait for the user. The fetched ticket goes into the snapshot directory so
 #   every charter reads a spec path, as for a file spec.
+# - Without --model, reviewers and verifiers run on the delegate model in
+#   references/delegate-model.md, a cap one tier below a vendor's top model.
+#   /swe:implement holds a copy of the file for its workers, and the check
+#   script fails when the two differ. An explicit --model always wins.
 user-invocable: false
 ---
 
@@ -77,14 +81,14 @@ When `spec:` is a URL, fetch it with one call to the skill `swe:fetch-tickets`, 
 | Standards | `references/standards.md` | Always |
 | Spec | `references/spec.md` | When the manifest names a spec |
 
-Spawn one reviewer per axis, all in one message, in the **foreground** (on Claude Code, `run_in_background: false`), with the manifest's model and effort. Each prompt gives:
+Spawn one reviewer per axis, all in one message, in the **foreground** (on Claude Code, `run_in_background: false`), with the manifest's model and effort. When `model:` is `default`, or the host rejects the model it names, the model is the delegate model: read `references/delegate-model.md` for it. Each prompt gives:
 
 1. The absolute path of its charter, to read first and follow exactly.
 2. The resolved target, the file table, and the absolute `diff:` path.
 3. The `log:` path, when there is one.
 4. For Spec: the spec's path, and the slice number when there is one.
 
-If the host rejects the model or effort, or takes no per-call effort, use the default and say so in the report header. Without a subagent tool, run each charter as its own sequential pass and say so in the header.
+If the host rejects the effort, or takes no per-call effort, use the default and say so in the report header. Without a subagent tool, run each charter as its own sequential pass and say so in the header.
 
 ## 3. Deduplicate
 
@@ -108,8 +112,9 @@ Settle the snapshot first: in a session scratchpad, keep it and name it in the h
 Axes: Correctness, Standards, Spec (<spec path, or the ticket URL it was fetched from>[, slice <n>] | skipped: no --spec).
 Standards sources: <the Standards reviewer's Sources line>.
 Intent: <N commit messages | none: <scope> have no commit messages>.
+Reviewers: <the model reviewers and verifiers ran on>[, <level> effort].
 Snapshot: <path>
-<Notes: sequential fallback, unapplied model or effort, uncaptured untracked files.>
+<Notes: sequential fallback, unapplied effort, uncaptured untracked files.>
 <N> findings confirmed, <M> refuted.
 
 ## Spec
