@@ -1,14 +1,14 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: plan
-description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against their official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session or when asked, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices that change behavior a user could observe: once before drafting, and again only when a review finding needs one. An independent subagent reviews the plan, up to 3 times. Changes no code. Usage: /swe:plan [target …] [context]. User-invoked only."
+description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against their official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session or when asked, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices that change behavior a user could observe: once before drafting, and again only when a review finding needs one. An independent subagent reviews the plan, up to 3 times. Subagents run at medium effort, on the tier below when the session's model is its vendor's top one. Changes no code. Usage: /swe:plan [--review-model <name>] [--review-effort <level>] [target …] [context]. User-invoked only."
 compatibility: "Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. Research, the ticket fetch, and the review run in subagents, or inline on hosts without one. Official docs need web access; without it the facts they would settle are listed as unverified. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
 # Blocks auto-invocation; only /swe:plan works. Runs inline, without
 # context: fork, so the user sees the run and can answer its questions.
 disable-model-invocation: true
-argument-hint: "[target …] [context]"
+argument-hint: "[--review-model <name>] [--review-effort <level>] [target …] [context]"
 
 # Maintainer notes (frontmatter never reaches the model):
 # - Steps sit under their slice's heading, so a slice's steps and their order
@@ -34,6 +34,16 @@ argument-hint: "[target …] [context]"
 #   symbols, so the session reads what they point at before using it.
 # - A tiny repo with no outside APIs starts no researcher; the plan-shape
 #   eval grades that.
+# - Every subagent defaults to the delegate model in
+#   references/delegate-model.md, a cap one tier below a vendor's top model,
+#   at medium effort, so a plan costs the same whatever the session is set
+#   to. implement and code-review-core hold copies of the file, and the check
+#   script fails when the three differ. Only the review has flags: it is the
+#   one place worth buying the top model or more effort back, while
+#   researchers return pointers and the fetch relays a result unchanged.
+# - The review's model sits on its own report line, after the three fixed
+#   lines the evals match, and is left out when no subagent ran a review:
+#   the `Review:` line already says `inline`.
 ---
 
 # Plan
@@ -53,13 +63,18 @@ ARGUMENTS: $ARGUMENTS
 
 ## 1. Read the arguments
 
-The arguments are targets, then context, read by judgment:
+The arguments are flags, then targets, then context, read by judgment:
 
+- **`--review-model <name>`** sets the **review model**, the model step 6's reviews run on.
+- **`--review-effort <level>`** sets the **review effort**, the effort those reviews run at: `low`, `medium`, `high`, `xhigh`, or `max`. Without it, `medium`.
+- Any other word starting with `--`, one of these flags with no value, or `--review-effort` with another level, stops the run before anything is read or written. The final message then starts with this line: `/swe:plan takes two flags: --review-model <name> and --review-effort <level>.`
 - **Targets** come first: one path to an existing spec file (any document that states what to build, in any format), or one or more GitHub issue or Azure DevOps work-item URLs.
 - **Context** is the rest, from the first word that isn't a target. It narrows what gets planned ("criteria 7 to 9", "only the CLI part"). A file named inside a sentence is context.
 - With no target, the source is the **conversation**: its latest Shared understanding or Agreed fix block, or else what it agreed on. If it agreed on nothing, stop and ask what to plan.
 
 One run plans one source. Stop with a message saying so when given a spec file together with tickets, or two spec files. Also stop when a leading word looks like a path or URL but names no existing file, GitHub issue, or Azure DevOps work item: name it, and say which targets plan takes.
+
+The review model, when no flag set it or the subagent tool rejects the flag's, is the **delegate model**: read `references/delegate-model.md` for it. Steps 2 and 3 start their subagents on the delegate model at `medium` effort. Name the effort to the subagent tool on every subagent, `medium` included: a subagent given no effort runs at yours. When the subagent tool takes no effort, or rejects the level, that subagent runs at your own effort: on the report's `Review model:` line, write `the session's` in the level's place, and add why after the word `effort`: `(the subagent tool took none)` or `(<level> was rejected)`.
 
 Before anything else, print the echo line on its own line:
 
@@ -73,7 +88,7 @@ Planning: <kind>: <ref>[, <kind>: <ref> …][ + context: "<context>"]
 
 - **Spec** with numbered acceptance criteria: they are the plan's, copied word for word with their numbers. With a context, copy only those in scope, keeping their numbers, and name them on the plan's `Source:` line. Its non-goals, its decisions, and the design it settles (interfaces, schemas, data flow, UI states) come along, under whatever headings it uses. A `## Slices` section in the spec is ordinary text: step 5 draws the plan's own.
 - **Spec** in any other shape: derive the criteria from whatever states intent (requirements, user stories, "must" and "should" lines, goals), each with the spec line it comes from quoted. These are **derived criteria**: step 4 shows them to the user. Its non-goals, its decisions, and the design it settles come along under whatever headings it uses.
-- **Tickets**: fetch every URL in one call to the skill `swe:fetch-tickets`, by name, made by a fresh subagent in the foreground (on Claude Code, `run_in_background: false`) whose prompt says to call that skill with the URLs and reply with its result, unchanged. Call the skill yourself when there is no subagent tool, when the subagent fails or can't reach the skill, or when its reply asks for an Azure DevOps paste; then wait for the paste. Either way, continue here: the result is never your final message. When the skill can't be reached, ask the user to paste each ticket (title, body, acceptance criteria, and the comments that matter), and for a GitHub issue to say which parts were written by people outside the project, and wait. A pasted Azure DevOps item has nothing held back. In a pasted GitHub issue, the parts the user names are held back, and all of it is when they don't say. Report a ticket returned with `Error:` as not read; when none was read, stop. Draw the criteria from the acceptance criteria field, the body's requirements, and on-project comments that change them. Keep held-back text out until step 4.
+- **Tickets**: fetch every URL in one call to the skill `swe:fetch-tickets`, by name, made by a fresh subagent in the foreground (on Claude Code, `run_in_background: false`), on the delegate model at `medium` effort, whose prompt says to call that skill with the URLs and reply with its result, unchanged. Call the skill yourself when there is no subagent tool, when the subagent fails or can't reach the skill, or when its reply asks for an Azure DevOps paste; then wait for the paste. Either way, continue here: the result is never your final message. When the skill can't be reached, ask the user to paste each ticket (title, body, acceptance criteria, and the comments that matter), and for a GitHub issue to say which parts were written by people outside the project, and wait. A pasted Azure DevOps item has nothing held back. In a pasted GitHub issue, the parts the user names are held back, and all of it is when they don't say. Report a ticket returned with `Error:` as not read; when none was read, stop. Draw the criteria from the acceptance criteria field, the body's requirements, and on-project comments that change them. Keep held-back text out until step 4.
 - **Conversation**: copy an Agreed fix block's criteria as for a spec. Otherwise turn each agreed decision into the criteria that show it was built.
 
 Criteria you write yourself are numbered, observable, checkable one at a time, and each traces to a line of the source.
@@ -86,7 +101,7 @@ Skim the repo's layout, then list what the plan needs to know:
 - **Tests and checks.** The test framework and how its tests are laid out, and the project's checks (test, lint, typecheck) from the repo's instructions, package scripts, Makefile, or CI config. Name them; don't run them.
 - **External facts.** Each behavior of a library, tool, or service that a step will depend on and that the repo's code doesn't already rely on: a dependency it doesn't use yet, a flag or config key it never sets, a migration path, behavior that differs between versions. Code that already uses the API that way is the evidence, and needs no lookup.
 
-Answer a question yourself when a few reads settle it. Hand the rest to researchers: a part of the repo you would have to explore to find its landing sites, and every external fact. Group those questions by the part of the repo or the library they concern, and start one fresh subagent per group, all together, in the foreground (on Claude Code, `run_in_background: false`) with the session's model. Each prompt gives the absolute path of `references/researcher.md`, to read first and follow exactly; the group's questions, numbered; and, for external facts, the library's name and the version the repo pins.
+Answer a question yourself when a few reads settle it. Hand the rest to researchers: a part of the repo you would have to explore to find its landing sites, and every external fact. Group those questions by the part of the repo or the library they concern, and start one fresh subagent per group, all together, in the foreground (on Claude Code, `run_in_background: false`), on the delegate model at `medium` effort. Each prompt gives the absolute path of `references/researcher.md`, to read first and follow exactly; the group's questions, numbered; and, for external facts, the library's name and the version the repo pins.
 
 Without a subagent tool, or when one fails, answer its questions yourself by that charter.
 
@@ -159,7 +174,7 @@ Delivers criteria <numbers>: <what it delivers end to end>
 
 ## 6. Review
 
-Review the plan up to 3 times. Each review starts a fresh subagent in the foreground (on Claude Code, `run_in_background: false`) with the session's model. Its prompt gives the absolute path of `references/reviewer.md`, to read first and follow exactly; the plan's path; the spec's path when the source is a spec; and the criteria in scope when a context narrowed them.
+Review the plan up to 3 times. Each review starts a fresh subagent in the foreground (on Claude Code, `run_in_background: false`), on the review model at the review effort. Its prompt gives the absolute path of `references/reviewer.md`, to read first and follow exactly; the plan's path; the spec's path when the source is a spec; and the criteria in scope when a context narrowed them.
 
 Without a subagent tool, or when one fails, run the charter yourself as a separate pass: re-read the plan, the source, and the code from scratch, leaning toward finding problems, since you wrote the plan. Say in the report that the review ran inline.
 
@@ -169,12 +184,13 @@ Review again when this review fixed anything. Stop when a review fixes nothing, 
 
 ## 7. Report
 
-Your final message is this template. Keep the wording of its first three lines and the build line, filling in the values; word the lines between them yourself.
+Your final message is this template. Keep the wording of its first three lines, the `Review model:` line, and the build line, filling in the values; word the lines between them yourself.
 
 ````
 Plan: <path>
 <n> criteria, <n> steps[, <n> slices]; <n> decisions, <n> cautious readings.
 Review: <n> reviews[, inline]; <n> findings fixed, <n> rejected, <n> unfixed.
+<when a subagent ran a review: Review model: <review model>, <review effort> effort>
 
 <the cautious readings, one per line, when there are any>
 <each unfixed finding, with what it found and where, when there are any>

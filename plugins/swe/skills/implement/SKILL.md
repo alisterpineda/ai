@@ -66,8 +66,8 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 #   a vendor's top model delegates to the tier below, and any other session
 #   delegates to its own model, where workers still keep the conversation's
 #   context small. The table names models per vendor because Copilot runs
-#   this skill on other vendors' models. code-review-core holds a copy of the
-#   file, and the check script fails when the two differ.
+#   this skill on other vendors' models. code-review-core and plan hold
+#   copies of the file, and the check script fails when the three differ.
 # - Workers and reviews default to medium effort, whatever the session's, so
 #   a run costs the same at any session effort. The session keeps its own for
 #   what it does itself: orchestrating, checking, and fixing. Effort levels

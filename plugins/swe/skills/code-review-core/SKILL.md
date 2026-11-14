@@ -28,8 +28,8 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 #   every charter reads a spec path, as for a file spec.
 # - Without --model, reviewers and verifiers run on the delegate model in
 #   references/delegate-model.md, a cap one tier below a vendor's top model.
-#   /swe:implement holds a copy of the file for its workers, and the check
-#   script fails when the two differ. An explicit --model always wins.
+#   /swe:implement and /swe:plan hold copies of the file, and the check
+#   script fails when the three differ. An explicit --model always wins.
 # - Without --effort, they run at medium, whatever the session's effort, so
 #   a review costs the same at any session effort. The snapshot script holds
 #   that default and prints it in the manifest.
