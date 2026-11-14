@@ -29,7 +29,7 @@ ARGUMENTS: $ARGUMENTS
 
 The arguments, if any, are the **context**: free text naming the part of the conversation to spec. With a context, spec only that part. Without one, spec the whole conversation. A context can also name an existing spec to update: that file is then a source alongside the conversation.
 
-Read the latest **Shared understanding** block first, if the conversation has one; it is your primary source. Fill in detail from the rest of the conversation. Where the conversation changed its mind, the later statement wins.
+Read the conversation's latest **Shared understanding** or **Agreed fix** block first, if it has one; it is your primary source. Fill in detail from the rest of the conversation. Where the conversation changed its mind, the later statement wins.
 
 ## 2. Gaps
 

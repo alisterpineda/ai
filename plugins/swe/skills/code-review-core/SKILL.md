@@ -38,7 +38,7 @@ user-invocable: false
 
 # Code review core
 
-Review a diff along three **axes**, each run by an independent reviewer: **Correctness** (bugs and security basics), **Standards** (the repo's written rules, plus a code-smell baseline), and **Spec** (conformance to a spec, when one is given). A **skeptic** then tries to refute every finding, and only the survivors are reported. You are the **orchestrator**: you route the work and write the report.
+Review a diff along three **axes**, each run by an independent reviewer: **Correctness** (bugs and security basics), **Standards** (the repo's written rules, plus a code-smell baseline), and **Spec** (conformance to a spec, when one is given). The spec is whatever `--spec` names that states what to build: a spec, a plan, or a ticket. A **verifier** then tries to refute every finding, and only the survivors are reported. You are the **orchestrator**: you route the work and write the report.
 
 ## Invariants
 

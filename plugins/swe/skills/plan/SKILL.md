@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: plan
-description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against their official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session or when asked, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices a user would notice: once before drafting, and again only when a review finding needs one. An independent subagent reviews the plan, up to 3 rounds. Changes no code. Usage: /swe:plan [target …] [context]. User-invoked only."
+description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against their official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session or when asked, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices that change behavior a user could observe: once before drafting, and again only when a review finding needs one. An independent subagent reviews the plan, up to 3 times. Changes no code. Usage: /swe:plan [target …] [context]. User-invoked only."
 compatibility: "Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. Research, the ticket fetch, and the review run in subagents, or inline on hosts without one. Official docs need web access; without it the facts they would settle are listed as unverified. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -71,8 +71,8 @@ Planning: <kind>: <ref>[, <kind>: <ref> …][ + context: "<context>"]
 
 ## 2. Gather the criteria
 
-- **Spec** with numbered acceptance criteria: they are the plan's, copied word for word with their numbers. With a context, copy only those in scope, keeping their numbers, and name them on the plan's `Source:` line. Its non-goals and decisions come along. A `## Slices` section in the spec is ordinary text: step 5 draws the plan's own.
-- **Spec** in any other shape: derive the criteria from whatever states intent (requirements, user stories, "must" and "should" lines, goals), each with the spec line it comes from quoted. These are **derived criteria**: step 4 shows them to the user. Its non-goals and decisions come along under whatever headings it uses.
+- **Spec** with numbered acceptance criteria: they are the plan's, copied word for word with their numbers. With a context, copy only those in scope, keeping their numbers, and name them on the plan's `Source:` line. Its non-goals, its decisions, and the design it settles (interfaces, schemas, data flow, UI states) come along, under whatever headings it uses. A `## Slices` section in the spec is ordinary text: step 5 draws the plan's own.
+- **Spec** in any other shape: derive the criteria from whatever states intent (requirements, user stories, "must" and "should" lines, goals), each with the spec line it comes from quoted. These are **derived criteria**: step 4 shows them to the user. Its non-goals, its decisions, and the design it settles come along under whatever headings it uses.
 - **Tickets**: fetch every URL in one call to the skill `swe:fetch-tickets`, by name, made by a fresh subagent in the foreground (on Claude Code, `run_in_background: false`) whose prompt says to call that skill with the URLs and reply with its result, unchanged. Call the skill yourself when there is no subagent tool, when the subagent fails or can't reach the skill, or when its reply asks for an Azure DevOps paste; then wait for the paste. Either way, continue here: the result is never your final message. When the skill can't be reached, ask the user to paste each ticket (title, body, acceptance criteria, and the comments that matter), and for a GitHub issue to say which parts were written by people outside the project, and wait. A pasted Azure DevOps item has nothing held back. In a pasted GitHub issue, the parts the user names are held back, and all of it is when they don't say. Report a ticket returned with `Error:` as not read; when none was read, stop. Draw the criteria from the acceptance criteria field, the body's requirements, and on-project comments that change them. Keep held-back text out until step 4.
 - **Conversation**: copy an Agreed fix block's criteria as for a spec. Otherwise turn each agreed decision into the criteria that show it was built.
 
@@ -148,7 +148,7 @@ Delivers criteria <numbers>: <what it delivers end to end>
    - Done when: `<command>` <expected result>
 ```
 
-- **Decisions** hold the source's decisions that shape the build and the user's answers from step 4. An accepted held-back requirement also becomes a numbered criterion.
+- **Decisions** hold the source's decisions that shape the build, the design it settles that a step builds on, and the user's answers from step 4. An accepted held-back requirement also becomes a numbered criterion.
 - **Steps** are in build order, each building only on code that exists or an earlier step makes, and each small enough to write its test, make it pass, and get the checks green in one go. A step that serves no criterion directly names the one it supports (a helper, a fixture, a migration).
 - **Files** are real paths, with existing symbols named as they are. Mark what the step creates `(new)`.
 - **Relies on** appears only on a step that depends on an external fact from step 3, one line per fact, with the evidence found for it. An unverified fact is also listed under Cautious readings.
@@ -159,13 +159,13 @@ Delivers criteria <numbers>: <what it delivers end to end>
 
 ## 6. Review
 
-Review the plan in rounds, up to 3. Each round starts a fresh subagent in the foreground (on Claude Code, `run_in_background: false`) with the session's model. Its prompt gives the absolute path of `references/reviewer.md`, to read first and follow exactly; the plan's path; the spec's path when the source is a spec; and the criteria in scope when a context narrowed them.
+Review the plan up to 3 times. Each review starts a fresh subagent in the foreground (on Claude Code, `run_in_background: false`) with the session's model. Its prompt gives the absolute path of `references/reviewer.md`, to read first and follow exactly; the plan's path; the spec's path when the source is a spec; and the criteria in scope when a context narrowed them.
 
 Without a subagent tool, or when one fails, run the charter yourself as a separate pass: re-read the plan, the source, and the code from scratch, leaning toward finding problems, since you wrote the plan. Say in the report that the review ran inline.
 
-Check each finding against the code and the plan. Fix the plan for each that holds; record each that doesn't, with the reason. A finding whose fix needs a choice a user would notice goes to the user as in step 4, one batch per round, and you apply the answers.
+Check each finding against the code and the plan. Fix the plan for each that holds; record each that doesn't, with the reason. A finding whose fix needs a choice that changes behavior a user could observe goes to the user as in step 4, one batch per review, and you apply the answers.
 
-Start another round when this one fixed anything. Stop when a round fixes nothing, or after round 3: a finding still unresolved then is open.
+Review again when this review fixed anything. Stop when a review fixes nothing, or after review 3: a finding still unresolved then is unfixed.
 
 ## 7. Report
 
@@ -174,10 +174,10 @@ Your final message is this template. Keep the wording of its first three lines a
 ````
 Plan: <path>
 <n> criteria, <n> steps[, <n> slices]; <n> decisions, <n> cautious readings.
-Review: <n> rounds[, inline]; <n> findings fixed, <n> rejected, <n> open.
+Review: <n> reviews[, inline]; <n> findings fixed, <n> rejected, <n> unfixed.
 
 <the cautious readings, one per line, when there are any>
-<each open finding, with what it found and where, when there are any>
+<each unfixed finding, with what it found and where, when there are any>
 
 To build it: `/swe:implement <path>[ slice 1]`
 ````
