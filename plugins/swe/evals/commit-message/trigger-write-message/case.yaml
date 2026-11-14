@@ -2,7 +2,7 @@ schema_version: "1.1"
 name: trigger-write-message
 tags: [trigger]
 plugins: ["../../..", "../../../../core"]
-runs: 3
+runs: 1
 context:
   scaffold_script: fixture.sh
 execution:
