@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: group-steps
+tags: [build]
+plugins: ["../../..", "../../../../core"]
+runs: 1
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 150
+  timeout_seconds: 1800
+  allowed_tools: [Read, Glob, Grep, Skill, Agent, Bash, Write, Edit]
+  prompt: "/swe:implement --no-review .scratch/text-stats-plan.md Delegate every step to a worker, however small: build none of them yourself."

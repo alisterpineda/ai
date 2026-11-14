@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: implement
-description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands each well-specified unit to a worker subagent, builds the tiny and the judgment-heavy ones itself, and checks every unit itself before the next starts. It then reviews the result with swe:code-review-core, fixes the findings that need no choice from the user, and reviews again, up to 3 reviews; --no-review skips that. Workers and reviews run on the session's model, or on the tier below when the session's is the vendor's top one. When the review leaves nothing open, it commits the run's work as one commit, never pushed; --no-commit, a skipped review, or a file that already held uncommitted changes leaves the work uncommitted. Usage: /swe:implement [--worker-model <name>] [--review-model <name>] [--review-effort <level>] [--no-review] [--no-commit] [target …] [context]. User-invoked only."
+description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands the well-specified ones to worker subagents, grouping units in the same files, builds the tiny and the judgment-heavy ones itself, and checks each worker's units itself before the next starts. It then reviews the result with swe:code-review-core, fixes the findings that need no choice from the user, and reviews again, up to 7 reviews; --no-review skips that. Workers and reviews run on the session's model, or on the tier below when the session's is the vendor's top one. When the review leaves nothing open, it commits the run's work as one commit, never pushed; --no-commit, a skipped review, or a file that already held uncommitted changes leaves the work uncommitted. Usage: /swe:implement [--worker-model <name>] [--review-model <name>] [--review-effort <level>] [--no-review] [--no-commit] [target …] [context]. User-invoked only."
 compatibility: "Workers need a subagent tool, else the session builds every unit; where it takes no model, workers and reviews use the session's. Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. The review runs the skill swe:code-review-core, called by name in a subagent, or inline without one; unreachable, the review is skipped. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -17,14 +17,31 @@ argument-hint: "[--worker-model <name>] [--review-model <name>] [--review-effort
 # - The review loop is back, on by default, because every build was followed
 #   by the same typed turns: review, "apply what you recommend", wait. It
 #   lives in references/review-loop.md and calls swe:code-review-core, so this
-#   file gains one step. It differs from the 2.0.0 loop on purpose: 3 reviews
-#   not 7, findings that need the user's choice are deferred instead of
-#   asked or fixed, and no start-tree script (one `git status` at the start
-#   tells the user's earlier changes from the run's).
+#   file gains one step. It differs from the 2.0.0 loop on purpose: findings
+#   that need the user's choice are deferred instead of asked or fixed, and
+#   no start-tree script (one `git status` at the start tells the user's
+#   earlier changes from the run's).
+# - The loop's limit is 7 reviews, a stop for a runaway loop and nothing more.
+#   At 3, loops on real slices stopped while reviews still confirmed defects
+#   (1 to 6 left unfixed), and none ended clean, so step 6 never committed.
+#   Every round stays a full, fresh review: a round narrowed to the fixes
+#   would be faster but would drop the second opinion on the original work.
+#   `Findings per review:` in the report shows whether loops converge.
 # - The review takes no target, so it reads all uncommitted changes. Staged
 #   changes would narrow it to the index, hence the skip in step 5.
-# - Units run one at a time in the one working tree so a red check points at
-#   one unit. No parallel workers and no worktrees.
+# - Groups run one at a time in the one working tree. No parallel workers and
+#   no worktrees: in measured runs nearly every unit shared a file with an
+#   earlier one, and a worktree's setup costs more than a 2 to 5 minute unit.
+# - One worker builds a group of units because a worker per plan step paid a
+#   cold start (the rules, the plan, the same files read again) and a
+#   hand-off for every step, on steps as short as 90 seconds. A group is
+#   consecutive units working in the same files, where one worker saves the
+#   most reading. The limit of 4 only stops a long run of such units from
+#   becoming one very long worker; step count is a weak measure of a unit's
+#   weight (one unit added 20K to 125K tokens to a worker's context), hence
+#   the rule that a large unit stays alone. The report's Group column is
+#   there to tune both. The price: a red check points at a group's units,
+#   not at one.
 # - Workers and reviews default to the delegate model in
 #   references/delegate-model.md. It is a cap, not a step down: a session on
 #   a vendor's top model delegates to the tier below, and any other session
@@ -37,7 +54,7 @@ argument-hint: "[--worker-model <name>] [--review-model <name>] [--review-effort
 # - The review's model sits on its own report line so the `Review:` line the
 #   evals match keeps its shape.
 # - Worker rules live in references/worker.md, the one file a worker reads, so
-#   the orchestrator's prompt carries the unit and paths only.
+#   the orchestrator's prompt carries the units and paths only.
 # - The run commits its own work when the review leaves nothing open, because
 #   every clean run was followed by the same typed turn, "commit", and a wrong
 #   commit costs one `git reset HEAD~1`. The gates keep it to work the review
@@ -96,6 +113,8 @@ A unit is one piece of work small enough to build and check in one go.
 - **A plan with numbered steps**: each step not marked `Done:` is a unit, in the plan's order, as written. When the plan has slices and the context names none, build the first slice with an unfinished step and stop there. A slice's steps are the ones under its heading, or the ones tagged with its number. A step is marked only once its work is committed (step 8), so an unmarked step's work may already be in the tree or in a commit. Don't rebuild that work: run step 4 on what is there and build only what is missing. When it passes and is already committed, mark the step as step 8 says.
 - **Anything else**: read the code the work lands in, then list the units in a message before building: numbered, in build order, each with what it does, the files it touches, and the check that shows it done. Each unit builds only on code that exists or an earlier unit makes. Write no plan file.
 
+**Group the units.** A group is a run of consecutive units that one worker builds. Take the units in order: a unit joins the current group when most of the files it names are files the group's units already name, and otherwise starts the next group. A unit is a group of its own when it is large (it adds a new component, or names a long list of files), or when you will build it yourself as step 3 says. A group holds at most 4 units.
+
 Find the project's checks (test, lint, typecheck) in the plan's `## Checks`, else in the repo's instructions, package scripts, Makefile, or CI config.
 
 Ask the user, in one numbered message with options and your recommendation for each, and wait, only for:
@@ -107,34 +126,34 @@ With nothing to ask, go straight on.
 
 Before building, run `git status --porcelain` and keep its output: the **starting changes**, the files already changed when the run began.
 
-## 3. Build each unit
+## 3. Build each group
 
-Take the units one at a time, in order. Finish step 4 for a unit before starting the next.
+Take the groups one at a time, in order. Finish step 4 for a group before starting the next.
 
 **Delegate** a unit when its outcome, files, and check are all stated and a worker could build it from the brief alone. **Build it yourself** when the edit is smaller than its brief would be, or when it needs judgment the brief can't carry: a design choice, a change that cuts across units, code whose shape depends on what you learned building earlier units. Without a subagent tool, build every unit yourself.
 
-To delegate, start one subagent on the worker model and wait for its result before doing anything else. Its prompt holds:
+To delegate a group, start one subagent on the worker model and wait for its result before doing anything else. Its prompt holds:
 
 - the absolute path of `references/worker.md`, to read first and follow exactly;
-- the unit: for a plan step, the plan's path and the step's number; otherwise the unit's text from your list;
-- the criteria the unit serves, word for word, and the decisions and cautious readings that bear on it;
+- the group's units, in build order: for plan steps, the plan's path and the steps' numbers; otherwise each unit's text from your list;
+- for each unit, the criteria it serves, word for word, and the decisions and cautious readings that bear on it;
 - the checks to run;
-- what earlier units changed that this one builds on, by file and symbol.
+- what earlier groups changed that this one builds on, by file and symbol.
 
 **Tests.** A unit that names a test to write first gets that test written and seen failing before its code. Any other unit gets tests where the repo already tests that area, in the repo's framework and layout.
 
-## 4. Check the unit
+## 4. Check the group
 
-Whoever built it, check the unit yourself:
+Whoever built it, check every unit of the group yourself:
 
-1. Run the unit's own check, then the project's checks.
-2. Read every change the unit made, and hold it against the unit and its criteria: it does what the unit says, tests assert the behavior the criterion names, nothing beyond the unit changed, and no name, comment, or message carries one of the source's labels.
+1. Run each unit's own check, then the project's checks once.
+2. Read every change the group made, and hold it against each unit and its criteria: it does what the unit says, tests assert the behavior the criterion names, nothing beyond the group's units changed, and no name, comment, or message carries one of the source's labels.
 
 A check that fails in code no unit of this run touched is the project's: record it for the report and leave it.
 
-When a worker returns `Status: blocked`, skip the checks and the re-brief. A block the code settles (a renamed symbol, a moved file) is yours: build the unit yourself. A block on a choice that changes behavior a user could observe goes to the user as in step 2, and you build the unit from the answer.
+When a worker returns `Status: blocked`, check the units it finished as above, and skip the checks and the re-brief for the unit it stopped at. A block the code settles (a renamed symbol, a moved file) is yours: build that unit yourself. A block on a choice that changes behavior a user could observe goes to the user as in step 2, and you build the unit from the answer. The group's units after the blocked one become a new group, built after it.
 
-When a worker's unit fails, send the same worker what failed, once: the command and its output, or the criterion and the lines that miss it. Continue that worker where the host allows, else start a fresh one with the original prompt plus the failure. Check again. When it fails a second time, fix the unit yourself. When your own work fails, fix it. A unit you can't get to pass after three attempts of your own ends the run: go to step 7 and report it as the stop.
+When a worker's unit fails, send the same worker what failed, once: the unit, and the command and its output, or the criterion and the lines that miss it. Continue that worker where the host allows, else start a fresh one whose prompt holds the failed units only, as step 3 lists, plus the failure and what the group already built, by file and symbol. Check again. When a unit fails a second time, fix that unit yourself. When your own work fails, fix it. A unit you can't get to pass after three attempts of your own ends the run: go to step 7 and report it as the stop.
 
 A passing plan step stays unmarked in the plan until its work is committed (step 8).
 
@@ -170,11 +189,11 @@ Your final message is this template. Keep its first two lines, the `Review:` and
 
 ````
 Built: <n> of <n> units from <source path, ticket refs, or the conversation>[, slice <n>]
-Workers: <n> delegated to <worker model>, <n> built by the session, <n> taken over | no subagent tool, the session built every unit
+Workers: <n> workers built <n> units on <worker model>, <n> units built by the session, <n> taken over | no subagent tool, the session built every unit
 
-| Unit | Built by | Check |
-|---|---|---|
-| <n>. <name> | worker / session / taken over | passed / failed: <what> |
+| Unit | Group | Built by | Check |
+|---|---|---|---|
+| <n>. <name> | <the group's number> | worker / session / taken over | passed / failed: <what> |
 
 <each cautious reading, one per line, when there are any>
 <each check that was already failing, with its command, when there are any>
@@ -182,6 +201,7 @@ Workers: <n> delegated to <worker model>, <n> built by the session, <n> taken ov
 
 Review: <n> reviews, <clean | nothing left to fix | stopped at the limit | review <n> did not report: <why>>; <n> findings fixed, <n> deferred, <n> unfixed | skipped: <--no-review | a unit ended the run | the index holds staged changes | <why the first review did not report>>
 <when the review ran: Review model: <review model>[, <level> effort]>
+<when the review ran: Findings per review: <the number each review confirmed, in order, comma-separated>>
 
 <when the review ran, each list that has entries>
 Fixed:

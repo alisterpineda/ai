@@ -1,6 +1,6 @@
 # Review loop
 
-Review the run's work, fix the findings that need no choice from the user, and review again, at most 3 reviews. The review only reports; you make the fixes.
+Review the run's work, fix the findings that need no choice from the user, and review again, at most 7 reviews. The review only reports; you make the fixes.
 
 ## Run a review
 
@@ -28,7 +28,7 @@ Take each confirmed finding in the report's order and do the first of these that
 
 1. **The same finding as one you deferred or left unfixed**: its entry stays as it is.
 2. **The same finding as one you fixed**: the fix didn't hold. Mark it unfixed and leave the code as it is.
-3. **This is the third review**: mark it unfixed, as found by the last review. A fix made now would reach the tree unreviewed.
+3. **This is the last review the limit allows**: mark it unfixed, as found by the last review. A fix made now would reach the tree unreviewed.
 4. **Its site is in a file from the starting changes that no unit of this run changed**: defer it as in the tree before this run. A file a unit changed is the run's work as a whole, the lines that were there at the start included: a finding anywhere in it goes on to the next rule.
 5. **Its fix needs the user's choice**: defer it, with the choice in one sentence. A fix needs a choice when:
    - the ways to fix it differ in behavior a user could observe, and neither the source nor the code around it settles which;
@@ -41,11 +41,11 @@ When this review led to no fix that is still in the tree, the loop ends. Otherwi
 
 ## Record for the report
 
-Keep, for steps 6 and 7: how many reviews reported and how the loop ended, and each ledger entry with its state, the files a fix changed, and the reason it was deferred or left unfixed.
+Keep, for steps 6 and 7: how many reviews reported, how many findings each one confirmed, and how the loop ended, and each ledger entry with its state, the files a fix changed, and the reason it was deferred or left unfixed.
 
 The loop ended, by the first of these that fits:
 
 - **review <n> did not report: <why>**: a review after the first came back without a report.
 - **clean**: the last review confirmed nothing.
-- **stopped at the limit**: the third review confirmed a finding.
+- **stopped at the limit**: the last review the limit allows confirmed a finding.
 - **nothing left to fix**: every finding the last review confirmed was deferred or left unfixed.
