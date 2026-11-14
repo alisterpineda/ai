@@ -1,6 +1,6 @@
 {
   "name": "swe",
-  "version": "4.13.0",
+  "version": "4.14.0",
   "description": "Software-engineering workflow skills: diagnose bugs from tickets, specs, or a description down to their root cause, turn a design conversation into a spec file, plan how to build a spec, tickets, or an agreed design against the real code, step by step with the test each step writes first, implement it with the session's model orchestrating worker subagents and a review-and-fix loop over the result that commits the work when nothing is left open, both capped at the tier below a vendor's top model, review code for correctness, the repo's written standards, and conformance to a spec, then commit with staging and message conventions and write the PR title and description.",
   "author": {
     "name": "Alister Pineda",

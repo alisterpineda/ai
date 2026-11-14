@@ -35,6 +35,11 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 #   had added. Under this rule each of those loops ends at review 2. The cost:
 #   review 2's MINORs go unfixed, and its Standards pass is wasted (smells are
 #   always MINOR). An axis selector on the engine would recover that pass.
+# - A finding with two claims gets an entry per claim. The engine merges a
+#   defect into the scope-creep finding at the same site, with "remove it" as
+#   the one suggested fix, and the loop then deferred the defect along with
+#   the keep-or-drop choice: 1 of 3 such runs of the review-fix eval, and the
+#   cause of its 4 failures in 30. With the rule, 3 of 3 merged runs fixed it.
 # - Noted findings have no count on the `Review:` line, so the line the evals
 #   match keeps its shape, and they never stop the commit: `unfixed` holds
 #   only what should.
