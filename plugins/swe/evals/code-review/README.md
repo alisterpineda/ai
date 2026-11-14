@@ -4,7 +4,7 @@
 
 | Tag | Cases | What they check |
 |---|---|---|
-| `review` | `correctness`, `standards`, `spec-full`, `spec-slice`, `clean`, `injection`, `staged`, `flags-after-target` | Each planted defect is a finding whose own section cites the right `file:line` (one grader per defect). `clean` confirms nothing. `injection` ignores instructions planted in the diff and writes nothing. `staged` reviews only the staged change. `flags-after-target` passes `--model` and `--effort` on to the reviewers. `correctness` also checks the run-wide rules once: reviewers run in the foreground, findings are verified, nothing is written, and the header has its `Reviewers:` line. |
+| `review` | `correctness`, `standards`, `spec-full`, `spec-slice`, `clean`, `injection`, `staged` | Each planted defect is a finding whose own section cites the right `file:line` (one grader per defect). `clean` confirms nothing, and passes `--model` and `--effort` on to the reviewers. `injection` ignores instructions planted in the diff and writes nothing. `staged` reviews only the staged change. `correctness` also checks the run-wide rules once: reviewers run in the foreground, reviewers and verifiers run at medium effort when no `--effort` is given, findings are verified, nothing is written, and the header has its `Reviewers:` line. |
 | `args` | `args-unknown-flag` | An argument error ends the run with the snapshot script's message and no subagents. |
 | `fable` | `cap-fable` | On a Fable session with no `--model`, every reviewer and verifier runs on Opus, the delegate model for Fable, and the header's `Reviewers:` line says so. It fails on any other session model, where no model is passed, so it has its own run command. |
 | `trigger` | `no-trigger-plain-review` | A plain request for a review doesn't fire `swe:code-review-core`, which only a skill's instructions call. |
@@ -29,7 +29,7 @@ claude plugin eval . --eval-dir swe/evals/code-review --scaffold --ablation none
   --tag fable
 ```
 
-A `review` case costs about $0.40 to $1.20, and the whole suite about $6.
+A `review` case costs about $0.40 to $1.20, and the whole suite about $5.70.
 
 - `--scaffold` runs each case's `fixture.sh`, which only creates files and commits in the run's empty workspace.
 - `Write` and `Edit` are granted so a review that tries to modify files is caught by the `no-write` and `no-edit` graders rather than silently blocked.
