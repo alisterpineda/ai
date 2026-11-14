@@ -27,6 +27,20 @@ argument-hint: "[--worker-model <name>] [--review-model <name>] [--review-effort
 #   Every round stays a full, fresh review: a round narrowed to the fixes
 #   would be faster but would drop the second opinion on the original work.
 #   `Findings per review:` in the report shows whether loops converge.
+# - From the second review on, only MAJOR-and-above findings and unmet
+#   criteria are fixed; the rest are noted. Fixing every finding never
+#   converged: over 20 reviews on real slices no loop ended clean, 85 of 90
+#   findings were MINOR, 52 were smells (each fresh reviewer picks a different
+#   handful), and about a third of later findings sat in code an earlier fix
+#   had added. Under this rule each of those loops ends at review 2. The cost:
+#   review 2's MINORs go unfixed, and its Standards pass is wasted (smells are
+#   always MINOR). An axis selector on the engine would recover that pass.
+# - Noted findings have no count on the `Review:` line, so the line the evals
+#   match keeps its shape, and they never stop the commit: `unfixed` holds
+#   only what should.
+# - A fix that adds observable behavior is deferred because the Spec reviewer
+#   flagged such fixes as scope creep one round later (a pixel cap, a lock
+#   timeout): 7 of the 9 Spec findings in those runs.
 # - The review takes no target, so it reads all uncommitted changes. Staged
 #   changes would narrow it to the index, hence the skip in step 5.
 # - Groups run one at a time in the one working tree. No parallel workers and
@@ -208,6 +222,8 @@ Fixed:
 - <title> (<files the fix changed>): <what changed>
 Deferred:
 - <title> (<file:line>): <the defect>. <the choice it waits on | It was in the tree before this run.>
+Noted:
+- <title> (<file:line>): <the defect>. <Minor, found by review <n>. | The fix didn't hold.>
 Unfixed:
 - <title> (<file:line>): <the defect>. <The fix didn't hold. | Its fix failed the checks and was undone. | Found by the last review.>
 
