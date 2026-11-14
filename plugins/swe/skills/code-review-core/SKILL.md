@@ -30,6 +30,9 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 #   references/delegate-model.md, a cap one tier below a vendor's top model.
 #   /swe:implement holds a copy of the file for its workers, and the check
 #   script fails when the two differ. An explicit --model always wins.
+# - Without --effort, they run at medium, whatever the session's effort, so
+#   a review costs the same at any session effort. The snapshot script holds
+#   that default and prints it in the manifest.
 user-invocable: false
 ---
 
@@ -63,7 +66,7 @@ The shell tool reports a non-zero exit code itself, so add no `echo $?` or other
 
 Pass `$ARGUMENTS` verbatim, in order: the script owns every argument rule, and its message is the user's answer. Add `--snapshots <dir>` when the host has a session scratchpad.
 
-The manifest gives the values every later step uses: `diff:`, `log:` (or `none`), `spec:`, `slice:`, `model:`, `effort:` (`none`, `default`, or `inherit` when not given), the file table, and any uncaptured untracked files.
+The manifest gives the values every later step uses: `diff:`, `log:` (or `none`), `spec:`, `slice:`, `model:`, `effort:` (`none`, `default`, or `medium` when not given), the file table, and any uncaptured untracked files.
 
 Act on the exit code of that first run; don't run it again:
 
@@ -88,7 +91,7 @@ Spawn one reviewer per axis, all in one message, in the **foreground** (on Claud
 3. The `log:` path, when there is one.
 4. For Spec: the spec's path, and the slice number when there is one.
 
-If the host rejects the effort, or takes no per-call effort, use the default and say so in the report header. Without a subagent tool, run each charter as its own sequential pass and say so in the header.
+If the host rejects the effort, or takes no per-call effort, the reviewers and verifiers run at your own effort: say so in the report header. Without a subagent tool, run each charter as its own sequential pass and say so in the header.
 
 ## 3. Deduplicate
 
@@ -112,7 +115,7 @@ Settle the snapshot first: in a session scratchpad, keep it and name it in the h
 Axes: Correctness, Standards, Spec (<spec path, or the ticket URL it was fetched from>[, slice <n>] | skipped: no --spec).
 Standards sources: <the Standards reviewer's Sources line>.
 Intent: <N commit messages | none: <scope> have no commit messages>.
-Reviewers: <the model reviewers and verifiers ran on>[, <level> effort].
+Reviewers: <the model reviewers and verifiers ran on>, <the manifest's level | the session's> effort.
 Snapshot: <path>
 <Notes: sequential fallback, unapplied effort, uncaptured untracked files.>
 <N> findings confirmed, <M> refuted.

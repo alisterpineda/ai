@@ -1,4 +1,4 @@
 ---
 type: regex
-pattern: '/swe:implement takes five flags: --worker-model <name>, --review-model <name>, --review-effort <level>, --no-review, and --no-commit\.'
+pattern: '/swe:implement takes six flags: --worker-model <name>, --worker-effort <level>, --review-model <name>, --review-effort <level>, --no-review, and --no-commit\.'
 ---

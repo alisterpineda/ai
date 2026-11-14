@@ -20,7 +20,7 @@
 #   --slice N        a slice number; needs --spec. The spec reviewer finds the
 #                    slice in whatever shape the spec uses.
 #   --model NAME     reviewer/verifier model; passed through, not validated.
-#   --effort LEVEL   low, medium, high, xhigh, or max.
+#   --effort LEVEL   low, medium, high, xhigh, or max. Default: medium.
 #
 #   (none)        staged changes if anything is staged, else all uncommitted
 #                 changes including untracked files
@@ -302,7 +302,7 @@ printf 'log: %s\n' "$log"
 if [ "$have_spec" -eq 1 ]; then printf 'spec: %s\n' "$spec_abs"; else printf 'spec: none\n'; fi
 printf 'slice: %s\n' "${slice:-none}"
 printf 'model: %s\n' "${model:-default}"
-printf 'effort: %s\n' "${effort:-inherit}"
+printf 'effort: %s\n' "${effort:-medium}"
 printf 'files (added\tdeleted\tpath; - for binary):\n%s\n' "$files"
 printf 'uncaptured untracked files:\n'
 if [ -s "$snap/uncaptured.txt" ]; then cat "$snap/uncaptured.txt"; else printf 'none\n'; fi

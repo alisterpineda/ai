@@ -268,7 +268,7 @@ run --model=sonnet HEAD --effort=high
 check "--flag=value form is accepted" '[ $code -eq 0 ] && [[ "$out" == *"model: sonnet"* ]] && [[ "$out" == *"effort: high"* ]]'
 cleanup_snap
 run HEAD
-check "manifest shows defaults for absent flags" '[[ "$out" == *"spec: none"* ]] && [[ "$out" == *"slice: none"* ]] && [[ "$out" == *"model: default"* ]] && [[ "$out" == *"effort: inherit"* ]]'
+check "manifest shows defaults for absent flags" '[[ "$out" == *"spec: none"* ]] && [[ "$out" == *"slice: none"* ]] && [[ "$out" == *"model: default"* ]] && [[ "$out" == *"effort: medium"* ]]'
 cleanup_snap
 run --spec spec.md --slice 2 HEAD
 check "spec and slice are reported, spec as an absolute path" '[ $code -eq 0 ] && [[ "$out" == *"spec: $work/spec.md"* ]] && [[ "$out" == *"slice: 2"* ]]'
