@@ -9,4 +9,4 @@ execution:
   max_turns: 200
   timeout_seconds: 3600
   allowed_tools: [Read, Glob, Grep, Skill, Agent, Bash, Write, Edit]
-  prompt: "/swe:implement docs/specs/top-words-spec.md"
+  prompt: "/swe:implement .scratch/top-words-plan.md"
