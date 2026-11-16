@@ -1,6 +1,6 @@
 ---
 name: pr-writeup
-description: "Write a pull-request title and description for a branch's net change and print them for pasting; it doesn't open the PR. Use whenever the user asks for a PR title, description, or write-up, or needs the text for a PR they're about to open, even casually (\"write me a PR\", \"what should the PR say\"). Not for summarizing or reviewing a PR that already exists."
+description: "Write a pull-request title and description for a branch's net change and print them for pasting; it doesn't open the PR. Use whenever the user asks for a PR title, description, or write-up, or needs the text for a PR they're about to open, even casually (\"write me a PR\", \"what should the PR say\"). Not for summarizing or reviewing a PR that already exists, and not where the repo or the user has a PR-writing skill of their own."
 
 # Maintainer notes (hosts that strip frontmatter never show these to the model):
 # - The description is written from the cumulative diff and describes the net
@@ -17,14 +17,23 @@ description: "Write a pull-request title and description for a branch's net chan
 #   them into a higher-level bullet buried the step a deployer must not miss.
 # - "No emoji" in the title and description was cut as default behavior: Opus
 #   doesn't add emoji to PR text unprompted. Restore it if runs start to.
+# - The skill steps aside entirely for a repo's or user's own PR-writing skill,
+#   so the plugin can be installed where a team already has one. Unlike
+#   commit-message it keeps nothing back: it only prints text, so it has no
+#   rule whose failure costs more than a reworded description.
+# - The target comes from the repo's instructions before the remote's default
+#   because teams that merge to `develop` or a release branch write that down,
+#   and a diff against the wrong target describes other people's work.
 ---
 
 # PR write-up
 
+When the repository or the user has a skill of their own for writing pull-request text (one the repo ships or the user wrote), use that skill instead of this one and stop here.
+
 ## 1. Pick the branches
 
 - Source: the current branch (HEAD), unless the user names another.
-- Target: the branch the user names. Otherwise the remote's default branch, from `git symbolic-ref --short refs/remotes/origin/HEAD`; when that fails, `main`, or `master` when `main` doesn't exist.
+- Target: the branch the user names. Otherwise the branch the repo's `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md` names for pull requests; read the ones that exist and aren't already in your context. Otherwise the remote's default branch, from `git symbolic-ref --short refs/remotes/origin/HEAD`; when that fails, `main`, or `master` when `main` doesn't exist.
 - Compare against the target's remote-tracking branch (`origin/<target>`) when it exists, not the local branch: a local `main` that lags behind `origin/main` pulls other people's merged commits into the diff. Don't fetch.
 - Confirm which branches you're comparing if there's any ambiguity.
 
@@ -45,7 +54,7 @@ Take the description's format from the first source that sets one:
 
 1. The user's request in this conversation.
 2. The repository: a pull-request template (`pull_request_template.md` or `PULL_REQUEST_TEMPLATE.md` in `.github/`, `docs/`, or the root, or one fitting this change from a `PULL_REQUEST_TEMPLATE/` directory), or a format its `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md` gives.
-3. The user's standing instructions, and other skills in use.
+3. The user's standing instructions, then other plugins' skills in use.
 4. History: a pattern most of the last 10 merged PRs follow (`gh pr list --state merged --limit 10 --json title,body`; without `gh`, `git log --merges -10` on the target from step 1), such as a title prefix, a ticket key, or the same sections. A mixed history sets nothing.
 5. Steps 4 and 5 and the Output format below.
 

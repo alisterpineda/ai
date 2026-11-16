@@ -1,6 +1,6 @@
 ---
 name: commit-message
-description: "Commit changes: stage the task's files by name, write the message, and run the commit. Use whenever the user asks to commit changes, make a commit, or write a commit message, even if they don't mention staging or formatting."
+description: "Commit changes: stage the task's files by name, write the message, and run the commit. Use whenever the user asks to commit changes, make a commit, or write a commit message, even if they don't mention staging or formatting. Where the repo or the user has a commit skill or procedure of their own, that one sets the message and the commit command, and this one keeps the staging to the task's files."
 
 # Maintainer notes (hosts that strip frontmatter never show these to the model):
 # - Staging is by name and limited to the task's files because the working tree
@@ -23,15 +23,28 @@ description: "Commit changes: stage the task's files by name, write the message,
 #   is not the test: a committed file has to say what the label means.
 # - "No emoji" in the title and body was cut as default behavior: Opus doesn't
 #   add emoji to commit messages unprompted. Restore it if runs start to.
+# - The skill yields to a repo's or user's own commit skill or procedure so the
+#   plugin can be installed where a team already has one. The yield is partial:
+#   the kept rules are the ones whose failure lands an unwanted change or a
+#   secret on a shared branch, so ambient instructions ("just `git add -A`")
+#   don't switch them off, and only the user's request does.
 ---
 
 # Commit
 
+When the repository or the user has a commit skill or written commit procedure of their own (a skill the repo ships or the user wrote, or steps in the repo's `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md`), follow it for what it covers: the message, what to run before committing, the commit command and its flags. Read the ones of those files that exist and aren't already in your context. Use the steps below for whatever it leaves out. Whatever it says, keep these rules, which only the user's request in this conversation changes:
+
+- Stage by name, and only the task's files (step 1).
+- Leave secrets and credentials unstaged.
+- Commit an index the user scoped to as it is.
+- Use only names the reader can look up (Sources).
+- Never pass `--no-verify`.
+
 Take the message's format from the first source that sets one:
 
 1. The user's request in this conversation.
-2. The repository: its `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md`, and a commit template (`commit.template` in git config, or a `.gitmessage`).
-3. The user's standing instructions, and other skills in use.
+2. The repository: its `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md`, a commit skill it ships, and a commit template (`commit.template` in git config, or a `.gitmessage`).
+3. The user's standing instructions and own skills, then other plugins' skills in use.
 4. History: a pattern most of the last 20 commits on the branch follow (`git log -20`), such as a `feat:` prefix, a ticket key, or prose bodies. A mixed history sets nothing.
 5. The Title and Body rules below.
 

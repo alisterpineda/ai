@@ -69,7 +69,7 @@ Take the spec's structure from the first source that sets one:
 
 1. The user's request in this conversation.
 2. The repository: a spec, RFC, or design-doc template, or a format its `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md` gives.
-3. The user's standing instructions, and other skills in use.
+3. The user's standing instructions and own skills, then other plugins' skills in use.
 4. Earlier specs: a structure most specs in the spec directory share.
 5. The layout below.
 
