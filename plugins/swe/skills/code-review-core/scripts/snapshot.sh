@@ -3,7 +3,7 @@
 # and freeze its diff.
 #
 # Usage: snapshot.sh [--snapshots DIR] [--spec PATH|URL] [--slice N]
-#                    [--model NAME] [--effort LEVEL] [<target>]
+#                    [--model NAME] [--effort LEVEL] [--uncommitted | <target>]
 #
 #   Flags may come in any order and on either side of the target, as
 #   `--flag value` or `--flag=value`. The orchestrator passes the review's
@@ -21,6 +21,10 @@
 #                    slice in whatever shape the spec uses.
 #   --model NAME     reviewer/verifier model; passed through, not validated.
 #   --effort LEVEL   low, medium, high, xhigh, or max. Default: medium.
+#   --uncommitted    all uncommitted changes including untracked files, staged
+#                    or not. Takes no target. /swe:implement passes it, so a
+#                    rename its run staged with `git mv` doesn't narrow the
+#                    review to the index.
 #
 #   (none)        staged changes if anything is staged, else all uncommitted
 #                 changes including untracked files
@@ -58,13 +62,13 @@ native() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s\n' "$1"; fi
 }
 
-flags_help="supported flags: --spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>, in any order around one target"
+flags_help="supported flags: --spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>, in any order around one target, or --uncommitted in place of the target"
 log_max_commits="${REVIEW_LOG_MAX_COMMITS:-100}"
 untracked_max_bytes="${REVIEW_UNTRACKED_MAX_BYTES:-262144}"
 target=""
 have_target=0
 snapshots="" spec="" slice="" model="" effort=""
-have_spec=0 have_slice=0
+have_spec=0 have_slice=0 uncommitted=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --*=*) flag=${1%%=*}; value=${1#*=}; shift; set -- "$flag" "$value" "$@"; continue;;
@@ -80,6 +84,7 @@ while [ $# -gt 0 ]; do
         --effort) effort=$2;;
       esac
       shift 2;;
+    --uncommitted) uncommitted=1; shift;;
     -*) die 2 "unknown flag '$1' ($flags_help)";;
     *) [ "$have_target" -eq 0 ] || die 2 "expected at most one target, got '$target' and '$1' ($flags_help)"
        target=$1; have_target=1; shift;;
@@ -112,6 +117,9 @@ fi
 if [ "$have_slice" -eq 1 ]; then
   [[ "$slice" =~ ^[1-9][0-9]*$ ]] || die 2 "--slice takes a slice number, got '$slice'"
 fi
+if [ "$uncommitted" -eq 1 ] && [ "$have_target" -eq 1 ]; then
+  die 2 "--uncommitted takes no target, got '$target' ($flags_help)"
+fi
 if [ -n "$snapshots" ]; then
   [ -d "$snapshots" ] || die 2 "snapshot root '$snapshots' is not a directory"
   snapshots="$(cd "$snapshots" && pwd)"
@@ -143,7 +151,7 @@ is_ref() {
 untracked=0
 logcmd=()
 if [ -z "$target" ]; then
-  if ! git diff --cached --quiet 2>/dev/null; then
+  if [ "$uncommitted" -eq 0 ] && ! git diff --cached --quiet 2>/dev/null; then
     scope="staged changes"
     cmd=(diff --cached)
   else

@@ -59,8 +59,21 @@ check "staged changes have no log" '[[ "$out" == *"log: none"* ]] && [ ! -e "$(s
 check "staged snapshot keeps the staged hunk" 'grep -qx "+two" "$(snapdir)/diff.patch"'
 check "staged snapshot excludes unstaged edits to a staged file" '! grep -q unstaged-line "$(snapdir)/diff.patch"'
 cleanup_snap
+run --uncommitted
+check "--uncommitted reads all uncommitted changes while something is staged" '[ $code -eq 0 ] && [[ "$out" == *"scope: uncommitted changes"* ]]'
+check "--uncommitted keeps the staged hunk" 'grep -qx "+two" "$(snapdir)/diff.patch"'
+check "--uncommitted keeps unstaged edits to a staged file" 'grep -qx "+unstaged-line" "$(snapdir)/diff.patch"'
+check "--uncommitted keeps untracked files" 'grep -q "^+++ b/loose.txt" "$(snapdir)/diff.patch"'
+cleanup_snap
+run --uncommitted main; check "--uncommitted with a target exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--uncommitted takes no target"* ]]'
 printf 'one\ntwo\n' > a.txt
 git reset -q a.txt
+git mv a.txt moved.txt
+run --uncommitted
+check "--uncommitted reads a rename staged by git mv with the unstaged edits" '[ $code -eq 0 ] && grep -q "^+++ b/moved.txt" "$(snapdir)/diff.patch" && grep -q "^--- a/a.txt" "$(snapdir)/diff.patch" && grep -q "^+++ b/loose.txt" "$(snapdir)/diff.patch"'
+check "a staged rename reaches the file table" '[[ "$out" == *"moved.txt"* ]]'
+cleanup_snap
+git mv moved.txt a.txt
 
 # --- uncommitted with awkward untracked names ---------------------------------
 printf 'n\n' > 'my notes.md'
