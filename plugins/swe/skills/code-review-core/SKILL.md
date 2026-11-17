@@ -30,9 +30,10 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 #   references/delegate-model.md, taking its Reviewer column.
 #   /swe:implement and /swe:plan hold copies of the file, and the check
 #   script fails when the three differ. An explicit --model always wins.
-# - Without --effort, they run at medium, whatever the session's effort, so
-#   a review costs the same at any session effort. The snapshot script holds
-#   that default and prints it in the manifest.
+# - Without --effort, they run at the same column's effort, whatever the
+#   session's, so a review costs the same at any session effort. The
+#   snapshot script prints `effort: default` and leaves the level to the
+#   table, as it does for the model.
 user-invocable: false
 ---
 
@@ -66,7 +67,7 @@ The shell tool reports a non-zero exit code itself, so add no `echo $?` or other
 
 Pass `$ARGUMENTS` verbatim, in order: the script owns every argument rule, and its message is the user's answer. Add `--snapshots <dir>` when the host has a session scratchpad.
 
-The manifest gives the values every later step uses: `diff:`, `log:` (or `none`), `spec:`, `slice:`, `model:`, `effort:` (`none`, `default`, or `medium` when not given), the file table, and any uncaptured untracked files.
+The manifest gives the values every later step uses: `diff:`, `log:` (or `none`), `spec:`, `slice:`, `model:`, `effort:` (`none` or `default` when not given), the file table, and any uncaptured untracked files.
 
 Act on the exit code of that first run; don't run it again:
 
@@ -84,7 +85,7 @@ When `spec:` is a URL, fetch it with one call to the skill `swe:fetch-tickets`, 
 | Standards | `references/standards.md` | Always |
 | Spec | `references/spec.md` | When the manifest names a spec |
 
-Spawn one reviewer per axis, all in one message, in the **foreground** (on Claude Code, `run_in_background: false`), with the manifest's model and effort. When `model:` is `default`, or the host rejects the model it names, the model is the delegate model for reviewers: read `references/delegate-model.md` for it, and take its Reviewer column. Each prompt gives:
+Spawn one reviewer per axis, all in one message, in the **foreground** (on Claude Code, `run_in_background: false`), with the manifest's model and effort. When `model:` is `default`, or the host rejects the model it names, the model is the delegate model for reviewers: read `references/delegate-model.md` for it, and take its Reviewer column. When `effort:` is `default`, the effort is the delegate effort for reviewers, from the same file. Each prompt gives:
 
 1. The absolute path of its charter, to read first and follow exactly.
 2. The resolved target, the file table, and the absolute `diff:` path.
@@ -115,7 +116,7 @@ Settle the snapshot first: in a session scratchpad, keep it and name it in the h
 Axes: Correctness, Standards, Spec (<spec path, or the ticket URL it was fetched from>[, slice <n>] | skipped: no --spec).
 Standards sources: <the Standards reviewer's Sources line>.
 Intent: <N commit messages | none: <scope> have no commit messages>.
-Reviewers: <the model reviewers and verifiers ran on>, <the manifest's level | the session's> effort.
+Reviewers: <the model reviewers and verifiers ran on>, <the level they ran at | the session's> effort.
 Snapshot: <path>
 <Notes: sequential fallback, unapplied effort, uncaptured untracked files.>
 <N> findings confirmed, <M> refuted.

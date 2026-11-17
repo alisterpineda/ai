@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: implement
-description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands the well-specified ones to worker subagents, grouping units in the same files, builds the tiny and the judgment-heavy ones itself, and checks each worker's units before the next starts. It then reviews the result with swe:code-review-core, fixes what needs no choice from the user, and reviews again, up to 7 times; --no-review skips that. Workers and reviews run at medium effort on the session's model, or on the tier below when the session's is the vendor's top one. When the review leaves nothing open, it makes one commit, never pushed; --no-commit, a skipped review, or a file that already held uncommitted changes leaves the work uncommitted. Usage: /swe:implement [--worker-model <name>] [--worker-effort <level>] [--review-model <name>] [--review-effort <level>] [--no-review] [--no-commit] [target …] [context]. User-invoked only."
+description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands the well-specified ones to worker subagents, grouping units in the same files, builds the tiny and the judgment-heavy ones itself, and checks each worker's units before the next starts. It then reviews the result with swe:code-review-core, fixes what needs no choice from you, and reviews again, up to 7 times; --no-review skips that. Workers run on the vendor's fast tier, reviews on its smart tier, up to the session's model, at medium effort (Gemini reviews: high). When the review leaves nothing open, it makes one commit, never pushed; --no-commit, a skipped review, or a file that already held uncommitted changes leaves the work uncommitted. Usage: /swe:implement [--worker-model <name>] [--worker-effort <level>] [--review-model <name>] [--review-effort <level>] [--no-review] [--no-commit] [target …] [context]. User-invoked only."
 compatibility: "Workers need a subagent tool, else the session builds every unit; where it takes no model, workers and reviews use the session's. Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. The review runs the skill swe:code-review-core, called by name in a subagent, or inline without one; unreachable, the review is skipped. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -76,21 +76,31 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 #   the rule that a large unit stays alone. The report's Group column is
 #   there to tune both. The price: a red check points at a group's units,
 #   not at one.
-# - Workers and reviews default to the delegate model in
-#   references/delegate-model.md. Its table has a column per role: workers
-#   take Worker, reviews take Reviewer. It is a cap, not a step down: a
-#   session on a vendor's top model delegates to the model its role's column
-#   names, and any other session delegates to its own model, where workers
-#   still keep the conversation's context small. The table names models per
-#   vendor because Copilot runs this skill on other vendors' models.
-#   code-review-core and plan hold copies of the file, and the check script
-#   fails when the three differ.
-# - Workers and reviews default to medium effort, whatever the session's, so
-#   a run costs the same at any session effort. The session keeps its own for
-#   what it does itself: orchestrating, checking, and fixing. Effort levels
-#   don't map across vendors, so there is no table for them: where the
-#   subagent tool takes no effort or rejects the level, the subagent runs at
-#   the session's, and the report says so.
+# - Workers and reviews default to the delegate model and effort in
+#   references/delegate-model.md: one row per session model, one column per
+#   role, each cell a model and an effort, so the session looks its answer
+#   up and derives nothing. code-review-core and plan hold copies of the
+#   file, and the check script fails when the three differ.
+# - The table is written out from tiers. Each vendor has a top, a smart, and
+#   a fast model (Fable or Mythos, Opus, Sonnet; Astra, Sol, Terra; Carbon,
+#   then Hydrogen for both, at high effort as the smart one). Workers and
+#   researchers take the fast tier and reviewers the smart one, never above
+#   the session's model, so a row whose model is at or below the role's tier
+#   says "your own", and so does the last row, where workers still keep the
+#   conversation's context small. It names models per vendor because Copilot
+#   runs this skill on other vendors' models. A new vendor adds a row for
+#   each of its models above the fast one.
+# - Workers take the fast tier because they get only the units a brief fully
+#   states, usually from a plan that did the thinking, and the session checks
+#   each one. If takeovers or review findings climb, raise the Worker
+#   column's effort before moving workers up a tier.
+# - The table's effort applies whatever the session's, so a run costs the
+#   same at any session effort. The session keeps its own for what it does
+#   itself: orchestrating, checking, and fixing. Levels don't map across
+#   vendors: where the subagent tool takes no effort or rejects the level,
+#   the subagent runs at the session's, and the report says so. The
+#   description, the README, and the plugin manifests repeat the table's
+#   tiers and effort for users.
 # - The review's model sits on its own report line so the `Review:` line the
 #   evals match keeps its shape.
 # - Worker rules live in references/worker.md, the one file a worker reads, so
@@ -131,14 +141,14 @@ ARGUMENTS: $ARGUMENTS
 ## 1. Read the arguments
 
 - **`--worker-model <name>`** sets the **worker model**, the model workers run on.
-- **`--worker-effort <level>`** sets the **worker effort**, the effort workers run at: `low`, `medium`, `high`, `xhigh`, or `max`. Without it, `medium`.
+- **`--worker-effort <level>`** sets the **worker effort**, the effort workers run at: `low`, `medium`, `high`, `xhigh`, or `max`.
 - **`--review-model <name>`** sets the **review model**, the model step 5's reviews run on.
-- **`--review-effort <level>`** sets the **review effort**, the effort those reviews run at, from the same levels. Without it, `medium`.
+- **`--review-effort <level>`** sets the **review effort**, the effort those reviews run at, from the same levels.
 - **`--no-review`** skips step 5, and with it step 6's commit.
 - **`--no-commit`** skips step 6's commit.
 - Any other word starting with `--`, one of the first four flags with no value, or an effort flag with another level, stops the run before anything is read or built, even a flag that asks for what the run does anyway. The final message then starts with this line: `/swe:implement takes six flags: --worker-model <name>, --worker-effort <level>, --review-model <name>, --review-effort <level>, --no-review, and --no-commit.`
 
-A model no flag set, or one the subagent tool rejects, is the delegate model for its role: read `references/delegate-model.md` for it, and take the Worker column for the worker model and the Reviewer column for the review model. When the subagent tool takes no effort, or rejects the level, that subagent runs at your own effort, and so does a review you run yourself for want of a subagent tool: wherever your report names that level, write `the session's` in its place, and add why after the word `effort`: `(the subagent tool took none)`, `(<level> was rejected)`, or `(no subagent tool)`.
+A model no flag set, or one the subagent tool rejects, is the delegate model for its role, and an effort no flag set is the delegate effort for its role: read `references/delegate-model.md` for both, and take the Worker column for the worker model and effort and the Reviewer column for the review's. When the subagent tool takes no effort, or rejects the level, that subagent runs at your own effort, and so does a review you run yourself for want of a subagent tool: wherever your report names that level, write `the session's` in its place, and add why after the word `effort`: `(the subagent tool took none)`, `(<level> was rejected)`, or `(no subagent tool)`.
 - **Targets** come first: one path to an existing file that states what to build (a plan, a spec, any format), or one or more GitHub issue or Azure DevOps work-item URLs.
 - **Context** is the rest, from the first word that isn't a target. It narrows what gets built ("slice 2", "steps 4 to 6", "only the CLI part").
 - With no target, the source is the **conversation**: its latest plan, Shared understanding, or Agreed fix, or else what it agreed on. If it agreed on nothing, stop and ask what to build.
@@ -173,7 +183,7 @@ Take the groups one at a time, in order. Finish step 4 for a group before starti
 
 **Delegate** a unit when its outcome, files, and check are all stated and a worker could build it from the brief alone. **Build it yourself** when the edit is smaller than its brief would be, or when it needs judgment the brief can't carry: a design choice, a change that cuts across units, code whose shape depends on what you learned building earlier units. Without a subagent tool, build every unit yourself.
 
-To delegate a group, start one subagent on the worker model, at the worker effort, and wait for its result before doing anything else. Name the worker effort to the subagent tool on every worker, `medium` included: a subagent given no effort runs at yours. Its prompt holds:
+To delegate a group, start one subagent on the worker model, at the worker effort, and wait for its result before doing anything else. Name the worker effort to the subagent tool on every worker, the delegate effort included: a subagent given no effort runs at yours. Its prompt holds:
 
 - the absolute path of `references/worker.md`, to read first and follow exactly;
 - the group's units, in build order: for plan steps, the plan's path and the steps' numbers; otherwise each unit's text from your list;

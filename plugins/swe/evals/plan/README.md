@@ -11,7 +11,7 @@
 | `security`, `network` | `target-github-outsider` | A GitHub issue by an outsider is held back as a question, attributed to its author, before any plan is written. |
 | `target`, `args` | `target-no-plan`, `target-unresolved`, `args-two-specs`, `args-unknown-flag` | The stops in step 1, each before anything is written: a bare `/swe:plan` with nothing agreed asks what to plan instead of picking up the repo's spec, a mistyped spec path is named rather than read as context, two spec files stop with "one run plans one source", and `--research-model`, a flag plan doesn't take, stops the run with the two flags it takes, before any subagent. |
 | `trigger` | `no-trigger-plain-request` | A plain request for a plan doesn't fire `swe:plan`, which is user-invoked only. |
-| `fable` | `cap-fable` | On a Fable session with no `--review-model`, every subagent runs on Opus, the delegate model for Fable, at least one of them a reviewer, and the report's `Review model:` line says so. It fails on any other session model, where no model is passed, so it has its own run command. |
+| `fable` | `cap-fable` | On a Fable session with no `--review-model`, every reviewer runs on Opus, the delegate model for reviewers on Fable, and the report's `Review model:` line says so. It fails on any other session model, where no model is passed, so it has its own run command. |
 | `quick` | `questions`, `derived-criteria`, `target-*`, `args-*` | The cases that stop before writing a plan: the cheap tier. |
 
 ## Run
