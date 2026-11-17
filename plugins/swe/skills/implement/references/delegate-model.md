@@ -11,7 +11,7 @@ It is a cap: a session on a model the table names delegates to the model in the 
 | Your model | Worker | Researcher | Reviewer |
 |---|---|---|---|
 | Claude Fable, Claude Mythos | Claude Opus | Claude Opus | Claude Opus |
-| GPT-6 Astra | GPT-6.1 Sol | GPT-6.1 Sol | GPT-6.1 Sol |
+| GPT-6.2 Astra | GPT-6.2 Sol | GPT-6.2 Sol | GPT-6.2 Sol |
 | Gemini 4 Carbon | Gemini 4 Hydrogen | Gemini 4 Hydrogen | your own |
 | any other | your own | your own | your own |
 
