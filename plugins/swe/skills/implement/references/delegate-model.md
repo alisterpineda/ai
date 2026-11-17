@@ -1,13 +1,19 @@
 # Delegate model
 
-The model your subagents run on when no flag names one, or when the subagent tool rejects the one a flag named. It is a cap: a session on a model above the cap delegates to the cap model, and every other session delegates to its own model.
+The model a subagent runs on when no flag names one, or when the subagent tool rejects the one a flag named. It depends on the subagent's role, and the skill that sent you here names the role:
 
-| Your model | Delegate model |
-|---|---|
-| Claude Fable, Claude Mythos | Claude Opus |
-| GPT-6 Astra | GPT-6.1 Sol |
-| Gemini 4 Carbon | Gemini 4 Argon |
-| any other | your own |
+- **Worker**: builds a unit of work from a brief.
+- **Researcher**: reads the repo, documentation, or a tracker, and reports what it found.
+- **Reviewer**: reviews work, or verifies a review's findings.
+
+It is a cap: a session on a model the table names delegates to the model in the role's column, and every other session delegates to its own model.
+
+| Your model | Worker | Researcher | Reviewer |
+|---|---|---|---|
+| Claude Fable, Claude Mythos | Claude Opus | Claude Opus | Claude Opus |
+| GPT-6 Astra | GPT-6.1 Sol | GPT-6.1 Sol | GPT-6.1 Sol |
+| Gemini 4 Carbon | Gemini 4 Hydrogen | Gemini 4 Hydrogen | your own |
+| any other | your own | your own | your own |
 
 A row covers every version of the models it names.
 

@@ -77,12 +77,14 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 #   there to tune both. The price: a red check points at a group's units,
 #   not at one.
 # - Workers and reviews default to the delegate model in
-#   references/delegate-model.md. It is a cap, not a step down: a session on
-#   a vendor's top model delegates to the tier below, and any other session
-#   delegates to its own model, where workers still keep the conversation's
-#   context small. The table names models per vendor because Copilot runs
-#   this skill on other vendors' models. code-review-core and plan hold
-#   copies of the file, and the check script fails when the three differ.
+#   references/delegate-model.md. Its table has a column per role: workers
+#   take Worker, reviews take Reviewer. It is a cap, not a step down: a
+#   session on a vendor's top model delegates to the model its role's column
+#   names, and any other session delegates to its own model, where workers
+#   still keep the conversation's context small. The table names models per
+#   vendor because Copilot runs this skill on other vendors' models.
+#   code-review-core and plan hold copies of the file, and the check script
+#   fails when the three differ.
 # - Workers and reviews default to medium effort, whatever the session's, so
 #   a run costs the same at any session effort. The session keeps its own for
 #   what it does itself: orchestrating, checking, and fixing. Effort levels
@@ -136,7 +138,7 @@ ARGUMENTS: $ARGUMENTS
 - **`--no-commit`** skips step 6's commit.
 - Any other word starting with `--`, one of the first four flags with no value, or an effort flag with another level, stops the run before anything is read or built, even a flag that asks for what the run does anyway. The final message then starts with this line: `/swe:implement takes six flags: --worker-model <name>, --worker-effort <level>, --review-model <name>, --review-effort <level>, --no-review, and --no-commit.`
 
-A model no flag set, or one the subagent tool rejects, is the delegate model: read `references/delegate-model.md` for it. When the subagent tool takes no effort, or rejects the level, that subagent runs at your own effort, and so does a review you run yourself for want of a subagent tool: wherever your report names that level, write `the session's` in its place, and add why after the word `effort`: `(the subagent tool took none)`, `(<level> was rejected)`, or `(no subagent tool)`.
+A model no flag set, or one the subagent tool rejects, is the delegate model for its role: read `references/delegate-model.md` for it, and take the Worker column for the worker model and the Reviewer column for the review model. When the subagent tool takes no effort, or rejects the level, that subagent runs at your own effort, and so does a review you run yourself for want of a subagent tool: wherever your report names that level, write `the session's` in its place, and add why after the word `effort`: `(the subagent tool took none)`, `(<level> was rejected)`, or `(no subagent tool)`.
 - **Targets** come first: one path to an existing file that states what to build (a plan, a spec, any format), or one or more GitHub issue or Azure DevOps work-item URLs.
 - **Context** is the rest, from the first word that isn't a target. It narrows what gets built ("slice 2", "steps 4 to 6", "only the CLI part").
 - With no target, the source is the **conversation**: its latest plan, Shared understanding, or Agreed fix, or else what it agreed on. If it agreed on nothing, stop and ask what to build.

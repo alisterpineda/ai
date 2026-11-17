@@ -2,7 +2,7 @@
 # ── Portable (agentskills.io spec) ──
 name: code-review-core
 description: "Code review engine for other skills: verified findings on a diff's correctness, the repo's written standards, and spec conformance, report-only. Call it when a skill's instructions name it, with /swe:code-review's arguments."
-compatibility: "Spawns parallel subagents where the host has a subagent tool, and runs sequential passes otherwise. Without --model they run on the session's model, or on the tier below when the session's is the vendor's top one and the tool takes a model. A ticket URL given as --spec is read by the skill swe:fetch-tickets, called by name. On Windows the script needs Git for Windows' bash. Hosts that ignore user-invocable list it as a command too."
+compatibility: "Spawns parallel subagents where the host has a subagent tool, and runs sequential passes otherwise. Without --model they run on the session's model, or on the model the delegate table names for reviewers when the session's is a vendor's top one and the tool takes a model. A ticket URL given as --spec is read by the skill swe:fetch-tickets, called by name. On Windows the script needs Git for Windows' bash. Hosts that ignore user-invocable list it as a command too."
 
 # ── Non-spec extension, honored by Claude Code and GitHub Copilot ──
 # Hidden from the / menu but model-invocable, so other skills can call it.
@@ -27,7 +27,7 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 #   wait for the user. The fetched ticket goes into the snapshot directory so
 #   every charter reads a spec path, as for a file spec.
 # - Without --model, reviewers and verifiers run on the delegate model in
-#   references/delegate-model.md, a cap one tier below a vendor's top model.
+#   references/delegate-model.md, taking its Reviewer column.
 #   /swe:implement and /swe:plan hold copies of the file, and the check
 #   script fails when the three differ. An explicit --model always wins.
 # - Without --effort, they run at medium, whatever the session's effort, so
@@ -84,7 +84,7 @@ When `spec:` is a URL, fetch it with one call to the skill `swe:fetch-tickets`, 
 | Standards | `references/standards.md` | Always |
 | Spec | `references/spec.md` | When the manifest names a spec |
 
-Spawn one reviewer per axis, all in one message, in the **foreground** (on Claude Code, `run_in_background: false`), with the manifest's model and effort. When `model:` is `default`, or the host rejects the model it names, the model is the delegate model: read `references/delegate-model.md` for it. Each prompt gives:
+Spawn one reviewer per axis, all in one message, in the **foreground** (on Claude Code, `run_in_background: false`), with the manifest's model and effort. When `model:` is `default`, or the host rejects the model it names, the model is the delegate model for reviewers: read `references/delegate-model.md` for it, and take its Reviewer column. Each prompt gives:
 
 1. The absolute path of its charter, to read first and follow exactly.
 2. The resolved target, the file table, and the absolute `diff:` path.
