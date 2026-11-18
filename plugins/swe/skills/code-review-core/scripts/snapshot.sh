@@ -3,7 +3,8 @@
 # and freeze its diff.
 #
 # Usage: snapshot.sh [--snapshots DIR] [--spec PATH|URL] [--slice N]
-#                    [--model NAME] [--effort LEVEL] [--uncommitted | <target>]
+#                    [--model NAME] [--effort LEVEL] [--serious-only]
+#                    [--uncommitted | <target>]
 #
 #   Flags may come in any order and on either side of the target, as
 #   `--flag value` or `--flag=value`. The orchestrator passes the review's
@@ -22,6 +23,10 @@
 #   --model NAME     reviewer/verifier model; passed through, not validated.
 #   --effort LEVEL   low, medium, high, xhigh, or max. Printed as `default` when
 #                    absent: the orchestrator takes the level from its table.
+#   --serious-only   a review that reports only MAJOR and CRITICAL findings and
+#                    unmet criteria. Printed as `serious only: yes`; the
+#                    orchestrator applies it. /swe:implement passes it from its
+#                    second review on, where it leaves minor findings unfixed.
 #   --uncommitted    all uncommitted changes including untracked files, staged
 #                    or not. Takes no target. /swe:implement passes it, so a
 #                    rename its run staged with `git mv` doesn't narrow the
@@ -63,13 +68,13 @@ native() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s\n' "$1"; fi
 }
 
-flags_help="supported flags: --spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>, in any order around one target, or --uncommitted in place of the target"
+flags_help="supported flags: --spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>, --serious-only, in any order around one target, or --uncommitted in place of the target"
 log_max_commits="${REVIEW_LOG_MAX_COMMITS:-100}"
 untracked_max_bytes="${REVIEW_UNTRACKED_MAX_BYTES:-262144}"
 target=""
 have_target=0
 snapshots="" spec="" slice="" model="" effort=""
-have_spec=0 have_slice=0 uncommitted=0
+have_spec=0 have_slice=0 uncommitted=0 serious=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --*=*) flag=${1%%=*}; value=${1#*=}; shift; set -- "$flag" "$value" "$@"; continue;;
@@ -86,6 +91,7 @@ while [ $# -gt 0 ]; do
       esac
       shift 2;;
     --uncommitted) uncommitted=1; shift;;
+    --serious-only) serious=1; shift;;
     -*) die 2 "unknown flag '$1' ($flags_help)";;
     *) [ "$have_target" -eq 0 ] || die 2 "expected at most one target, got '$target' and '$1' ($flags_help)"
        target=$1; have_target=1; shift;;
@@ -312,6 +318,7 @@ if [ "$have_spec" -eq 1 ]; then printf 'spec: %s\n' "$spec_abs"; else printf 'sp
 printf 'slice: %s\n' "${slice:-none}"
 printf 'model: %s\n' "${model:-default}"
 printf 'effort: %s\n' "${effort:-default}"
+if [ "$serious" -eq 1 ]; then printf 'serious only: yes\n'; else printf 'serious only: no\n'; fi
 printf 'files (added\tdeleted\tpath; - for binary):\n%s\n' "$files"
 printf 'uncaptured untracked files:\n'
 if [ -s "$snap/uncaptured.txt" ]; then cat "$snap/uncaptured.txt"; else printf 'none\n'; fi

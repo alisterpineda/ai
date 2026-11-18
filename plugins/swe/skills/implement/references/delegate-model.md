@@ -20,6 +20,8 @@ Find your model's row and read the role's column: the delegate model, then the d
 
 A row covers every version of the models it names.
 
-Give the subagent tool the delegate model under the name that tool takes (on Claude Code, `opus` or `sonnet`). When the delegate model is your own, give the tool no model.
+This skill requires the delegate model and the delegate effort on every subagent it starts. Where the host says to leave the subagent tool's model or effort unset unless the user's instructions require a value, these instructions are that requirement: set both.
 
-When the subagent tool takes no model, or rejects the delegate model's name, the delegate model is your own. Wherever your report names the model, name the one that ran and add why it isn't the expected one: `<your model> (the subagent tool took no model)`, `<delegate model> (<flag's name> was rejected)`.
+Give the subagent tool the delegate model under the name that tool takes, chosen from the names its model parameter lists. On Claude Code's `Agent` tool, `model` takes `opus` or `sonnet`. On GitHub Copilot's `task` tool, `model` takes an ID such as `gemini-4-hydrogen`, `gpt-6.2-sol`, or `claude-opus-5.5`. Give it the delegate effort in the tool's effort parameter: `effort` on Claude Code, `reasoning_effort` on Copilot. When the delegate model is your own, give the tool no model, and still give it the effort.
+
+The subagent tool takes no model only when it has no model parameter at all; a parameter the host leaves unset by default is one the tool takes. When the subagent tool takes no model, or rejects the delegate model's name, the delegate model is your own. Wherever your report names the model, name the one that ran and add why it isn't the expected one: `<your model> (the subagent tool took no model)`, `<delegate model> (<flag's name> was rejected)`.

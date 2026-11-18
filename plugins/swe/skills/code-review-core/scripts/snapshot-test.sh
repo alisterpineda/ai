@@ -281,7 +281,10 @@ run --model=sonnet HEAD --effort=high
 check "--flag=value form is accepted" '[ $code -eq 0 ] && [[ "$out" == *"model: sonnet"* ]] && [[ "$out" == *"effort: high"* ]]'
 cleanup_snap
 run HEAD
-check "manifest shows defaults for absent flags" '[[ "$out" == *"spec: none"* ]] && [[ "$out" == *"slice: none"* ]] && [[ "$out" == *"model: default"* ]] && [[ "$out" == *"effort: default"* ]]'
+check "manifest shows defaults for absent flags" '[[ "$out" == *"spec: none"* ]] && [[ "$out" == *"slice: none"* ]] && [[ "$out" == *"model: default"* ]] && [[ "$out" == *"effort: default"* ]] && [[ "$out" == *"serious only: no"* ]]'
+cleanup_snap
+run --serious-only HEAD
+check "--serious-only is reported in the manifest" '[ $code -eq 0 ] && [[ "$out" == *"serious only: yes"* ]]'
 cleanup_snap
 run --spec spec.md --slice 2 HEAD
 check "spec and slice are reported, spec as an absolute path" '[ $code -eq 0 ] && [[ "$out" == *"spec: $work/spec.md"* ]] && [[ "$out" == *"slice: 2"* ]]'
@@ -307,7 +310,7 @@ check "another URL exits 2 naming the URL kinds" '[ $code -eq 2 ] && [[ "$err" =
 run --spec spec.md --slice x main; check "non-numeric slice exits 2" '[ $code -eq 2 ]'
 run --effort;                     check "flag without a value exits 2" '[ $code -eq 2 ] && [[ "$err" == *"needs a value"* ]]'
 run --effort --model x main;      check "flag followed by a flag exits 2" '[ $code -eq 2 ] && [[ "$err" == *"--effort needs a value"* ]]'
-run --frobnicate main;            check "unknown flag exits 2 naming the supported flags" '[ $code -eq 2 ] && [[ "$err" == *"--spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>"* ]]'
+run --frobnicate main;            check "unknown flag exits 2 naming the supported flags" '[ $code -eq 2 ] && [[ "$err" == *"--spec <path or ticket URL>, --slice <n>, --model <name>, --effort <level>, --serious-only"* ]]'
 run --effort extreme;             check "argument errors come before nothing-to-review" '[ $code -eq 2 ]'
 rm -f spec.md noslices.md
 

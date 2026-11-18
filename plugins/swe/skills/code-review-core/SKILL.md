@@ -34,6 +34,15 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 #   session's, so a review costs the same at any session effort. The
 #   snapshot script prints `effort: default` and leaves the level to the
 #   table, as it does for the model.
+# - --serious-only exists for /swe:implement's review loop, which from its
+#   second review on only notes MINOR findings. The smell pass and a verifier
+#   per MINOR finding were paid for and then ignored. MINORs are dropped
+#   before verification, not after, because the verifiers are the cost. The
+#   Correctness and Spec reviewers aren't told: their hunt costs the same
+#   either way, and a reviewer told to skip MINORs has a reason to rate up.
+#   The dropped findings are still listed, unverified, so the review loop can
+#   tell that a minor fix it made didn't hold. Dropped outright, such a
+#   finding left the loop reporting the fix as holding.
 user-invocable: false
 ---
 
@@ -67,7 +76,7 @@ The shell tool reports a non-zero exit code itself, so add no `echo $?` or other
 
 Pass `$ARGUMENTS` verbatim, in order: the script owns every argument rule, and its message is the user's answer. Add `--snapshots <dir>` when the host has a session scratchpad.
 
-The manifest gives the values every later step uses: `diff:`, `log:` (or `none`), `spec:`, `slice:`, `model:`, `effort:` (`none` or `default` when not given), the file table, and any uncaptured untracked files.
+The manifest gives the values every later step uses: `diff:`, `log:` (or `none`), `spec:`, `slice:`, `model:`, `effort:` (`none` or `default` when not given), `serious only:`, the file table, and any uncaptured untracked files.
 
 Act on the exit code of that first run; don't run it again:
 
@@ -91,12 +100,15 @@ Spawn one reviewer per axis, all in one message, in the **foreground** (on Claud
 2. The resolved target, the file table, and the absolute `diff:` path.
 3. The `log:` path, when there is one.
 4. For Spec: the spec's path, and the slice number when there is one.
+5. For Standards, when the manifest says `serious only: yes`: that the review is serious-only.
 
 If the host rejects the effort, or takes no per-call effort, the reviewers and verifiers run at your own effort: say so in the report header. Without a subagent tool, run each charter as its own sequential pass and say so in the header.
 
 ## 3. Deduplicate
 
 Merge findings that share a root cause at the same site, within or across axes, keeping the strongest severity. A merged finding keeps every axis's claim (kind, source, failure scenario) so each is verified on its own terms. Two sites stay two findings. Drop nothing: weighing findings is the verifier's job.
+
+The one exception is a review whose manifest says `serious only: yes`. After merging, set aside every finding rated `MINOR` that holds no unmet-criterion claim, and verify the rest. The findings set aside get no verifier and no section of their own: the report counts them in its Notes and lists them under `## Dropped unverified`.
 
 ## 4. Verify every finding
 
@@ -118,7 +130,7 @@ Standards sources: <the Standards reviewer's Sources line>.
 Intent: <N commit messages | none: <scope> have no commit messages>.
 Reviewers: <the model reviewers and verifiers ran on>, <the level they ran at | the session's> effort.
 Snapshot: <path>
-<Notes: sequential fallback, unapplied effort, uncaptured untracked files.>
+<Notes: sequential fallback, unapplied effort, uncaptured untracked files, `serious-only: <n> minor findings dropped unverified, no smell pass`.>
 <N> findings confirmed, <M> refuted.
 
 ## Spec
@@ -149,10 +161,14 @@ Snapshot: <path>
 
 ## Considered and rejected
 - <ID> <title>: <one-line refutation reason>
+
+## Dropped unverified
+- <title> (<file:line>): <the defect, in one sentence>
 ```
 
 - A confirmed finding appears once, in the first section that owns it: Spec (unmet criterion, scope creep), then Correctness, then Standards. Every other axis that confirmed a claim on it gets `- See <ID>: <title>.`
 - Use the verifier's corrected location and severity; a corrected severity adds *(severity corrected from X)* to the title. A smell keeps its `Possible <smell>: …` title.
 - Leave out Spec when it was skipped. Within a section, order and number findings by severity, critical first. An empty section says `No confirmed findings.`
 - `<N>` counts `###` findings, pointers excluded; `<M>` counts rejected entries.
+- `## Dropped unverified` appears only in a serious-only review, with `- None.` when nothing was set aside. Its entries have no ID and count toward neither `<N>` nor `<M>`.
 - An empty appendix says `- None: all findings survived verification.` or `- None: the reviewers reported no findings.`

@@ -33,8 +33,15 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 #   findings were MINOR, 52 were smells (each fresh reviewer picks a different
 #   handful), and about a third of later findings sat in code an earlier fix
 #   had added. Under this rule each of those loops ends at review 2. The cost:
-#   review 2's MINORs go unfixed, and its Standards pass is wasted (smells are
-#   always MINOR). An axis selector on the engine would recover that pass.
+#   review 2's MINORs go unfixed.
+# - From the second review on, the engine gets --serious-only: it skips the
+#   Standards smell pass (smells are always MINOR) and drops MINOR findings
+#   before verification, since the loop would only note them. In one 3-review
+#   run, 8 of the 11 verifiers in reviews 2 and 3 checked MINOR findings.
+#   The price: later reviews note only the findings a verifier corrected
+#   down to MINOR, so fewer noted entries reach the report and the plan.
+#   The engine still lists what it dropped, so a minor fix from review 1
+#   that comes back is noted and not left under Fixed.
 # - A finding with two claims gets an entry per claim. The engine merges a
 #   defect into the scope-creep finding at the same site, with "remove it" as
 #   the one suggested fix, and the loop then deferred the defect along with
@@ -260,7 +267,7 @@ Fixed:
 Deferred:
 - <title> (<file:line>): <the defect>. <the choice it waits on | It was in the tree before this run.>
 Noted:
-- <title> (<file:line>): <the defect>. <Minor, found by review <n>. | The fix didn't hold.>
+- <title> (<file:line>): <the defect>. <Minor, found by review <n>. | The fix didn't hold. | The fix may not have held: review <n> found it again, unverified.>
 Unfixed:
 - <title> (<file:line>): <the defect>. <The fix didn't hold. | Its fix failed the checks and was undone. | Found by the last review.>
 <when step 8 wrote entries: Open findings: <n> recorded in <plan path>>

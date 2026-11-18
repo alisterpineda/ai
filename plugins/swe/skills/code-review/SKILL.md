@@ -9,7 +9,7 @@ compatibility: "Needs the skill swe:code-review-core, called by name. On Claude 
 # context: fork + background: true run this body in a background subagent, so
 # the conversation stays usable during the review.
 disable-model-invocation: true
-argument-hint: "[--spec <spec, plan, or ticket URL>] [--slice <n>] [--model <name>] [--effort <level>] [--uncommitted | target]"
+argument-hint: "[--spec <spec, plan, or ticket URL>] [--slice <n>] [--model <name>] [--effort <level>] [--serious-only] [--uncommitted | target]"
 context: fork
 background: true
 

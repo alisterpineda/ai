@@ -7,7 +7,7 @@ Review the run's work, fix the findings that need no choice from the user, and r
 Start one general-purpose subagent on the review model, at the review effort, in the foreground (on Claude Code, `run_in_background: false`), and wait for its result before doing anything else. Its prompt holds:
 
 - the repository's absolute path, to work from;
-- to invoke the skill `swe:code-review-core`, by name, and follow it to the end, with these arguments and no target: `--uncommitted`, then `--spec <the source's absolute path>` when the source is a file, then `--slice <n>` when the run built one slice of a plan, `--model <name>` when the arguments held `--review-model`, and `--effort <the review effort>`;
+- to invoke the skill `swe:code-review-core`, by name, and follow it to the end, with these arguments and no target: `--uncommitted`, then `--spec <the source's absolute path>` when the source is a file, then `--slice <n>` when the run built one slice of a plan, `--model <name>` when the arguments held `--review-model`, `--effort <the review effort>`, and `--serious-only` on the second review and every later one;
 - that its final message is the review's report, or the message that stopped the review, word for word.
 
 Without a subagent tool, invoke `swe:code-review-core` yourself, by name, with the same arguments. When it hands its report back, continue here.
@@ -44,6 +44,8 @@ Take each confirmed finding in the report's order and do the first of these that
 
    A serious finding that only the first two of these would defer is fixed instead, by the fix that adds the least such behavior.
 7. **Otherwise fix it yourself**, whatever its severity. The finding's suggested fix is a starting point. Where the repo tests that area, the fix comes with a test that fails without it. A finding's ID is one of the source's labels and stays out of the repo.
+
+A review from the second on also lists minor findings under `## Dropped unverified`, which no verifier checked. They are not confirmed findings and go through none of the rules above. Use the list for one thing: when an entry is the same finding as one you fixed, mark that ledger entry noted, as a fix that may not have held. It leads to no fix.
 
 When this review led to no fix that is still in the tree, the loop ends. Otherwise run the project's checks, then the next review. A failure your fixes caused is yours to fix; when a fix still fails the checks after three attempts, undo that fix and mark its finding unfixed.
 
