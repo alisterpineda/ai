@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: implement
-description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands the well-specified ones to worker subagents, grouping units in the same files, builds the tiny and the judgment-heavy ones itself, and checks each worker's units before the next starts. It then reviews the result with swe:code-review-core, fixes what needs no choice from you, and reviews again, up to 7 times; --no-review skips that. Workers run on the vendor's fast tier, reviews on its smart tier, up to the session's model, at medium effort (Gemini reviews: high). When the review leaves nothing open, it makes one commit, never pushed; --no-commit, a skipped review, or a file that already held uncommitted changes leaves the work uncommitted. Usage: /swe:implement [--worker-model <name>] [--worker-effort <level>] [--review-model <name>] [--review-effort <level>] [--no-review] [--no-commit] [target …] [context]. User-invoked only."
+description: "Implement decided work: a plan, a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed. The session's model orchestrates: it splits the work into units, hands the well-specified ones to worker subagents, grouping units in the same files, builds the tiny and the judgment-heavy ones itself, and checks each worker's units before the next starts. It then reviews the result with swe:code-review-core, fixes what needs no choice from you, and reviews again, up to 7 times; --no-review skips that. Workers run on the vendor's fast tier, reviews on its smart tier, up to the session's model, at medium effort. When the review leaves nothing open, it makes one commit, never pushed; --no-commit, a skipped review, or a file that already held uncommitted changes leaves the work uncommitted. Usage: /swe:implement [--worker-model <name>] [--worker-effort <level>] [--review-model <name>] [--review-effort <level>] [--no-review] [--no-commit] [target …] [context]. User-invoked only."
 compatibility: "Workers need a subagent tool, else the session builds every unit; where it takes no model, workers and reviews use the session's. Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. The review runs the skill swe:code-review-core, called by name in a subagent, or inline without one; unreachable, the review is skipped. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -90,13 +90,13 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 #   file, and the check script fails when the three differ.
 # - The table is written out from tiers. Each vendor has a top, a smart, and
 #   a fast model (Fable or Mythos, Opus, Sonnet; Astra, Sol, Terra; Carbon,
-#   then Hydrogen for both, at high effort as the smart one). Workers and
-#   researchers take the fast tier and reviewers the smart one, never above
-#   the session's model, so a row whose model is at or below the role's tier
-#   says "your own", and so does the last row, where workers still keep the
-#   conversation's context small. It names models per vendor because Copilot
-#   runs this skill on other vendors' models. A new vendor adds a row for
-#   each of its models above the fast one.
+#   Neon, Hydrogen). Workers and researchers take the fast tier and
+#   reviewers the smart one, never above the session's model, so a row
+#   whose model is at or below the role's tier says "your own", and so does
+#   the last row, where workers still keep the conversation's context small.
+#   It names models per vendor because Copilot runs this skill on other
+#   vendors' models. A new vendor adds a row for each of its models above
+#   the fast one.
 # - Workers take the fast tier because they get only the units a brief fully
 #   states, usually from a plan that did the thinking, and the session checks
 #   each one. If takeovers or review findings climb, raise the Worker

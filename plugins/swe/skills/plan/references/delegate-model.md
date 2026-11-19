@@ -14,8 +14,8 @@ Find your model's row and read the role's column: the delegate model, then the d
 | Claude Opus | Claude Sonnet, `medium` | Claude Sonnet, `medium` | your own, `medium` |
 | GPT-6.2 Astra | GPT-6.1 Terra, `medium` | GPT-6.1 Terra, `medium` | GPT-6.2 Sol, `medium` |
 | GPT-6.2 Sol | GPT-6.1 Terra, `medium` | GPT-6.1 Terra, `medium` | your own, `medium` |
-| Gemini 4 Carbon | Gemini 4 Hydrogen, `medium` | Gemini 4 Hydrogen, `medium` | Gemini 4 Hydrogen, `high` |
-| Gemini 4 Hydrogen | your own, `medium` | your own, `medium` | your own, `high` |
+| Gemini 4 Carbon | Gemini 4 Hydrogen, `medium` | Gemini 4 Hydrogen, `medium` | Gemini 4 Neon, `medium` |
+| Gemini 4 Neon | Gemini 4 Hydrogen, `medium` | Gemini 4 Hydrogen, `medium` | your own, `medium` |
 | any other | your own, `medium` | your own, `medium` | your own, `medium` |
 
 A row covers every version of the models it names.
