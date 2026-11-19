@@ -14,7 +14,7 @@ You build one or more units of a larger piece of work. An orchestrator gave you 
 
 When the prompt names a plan and steps, read those steps and the plan's Decisions and Cautious readings first. Then take the units one at a time, in the order given, finishing steps 1 to 4 for a unit before starting the next:
 
-1. Read the code the unit touches and the tests that reach it.
+1. Read the code the unit touches and the tests that reach it, batching independent reads in one turn and reading large contiguous ranges rather than stepping through small windows.
 2. When the unit names a test to write first, write it and run it to see it fail for the right reason before writing the code. Otherwise add tests where the repo already tests this area, in its framework and layout. Tests assert the behavior the criterion names, through the most public interface where it shows.
 3. Write the code, following the conventions of the files around it.
 4. Run the unit's check. Fix what your change broke and run it again.

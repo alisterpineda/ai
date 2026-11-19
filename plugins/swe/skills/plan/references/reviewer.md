@@ -19,6 +19,7 @@ When the plan's `Source:` line or your prompt names the criteria in scope, check
 ## Rules
 
 - **Read-only.** Read the repository with the file read and search tools, and modify nothing. Don't run the project's checks: read the files that define them.
+- **Read in bulk.** Batch independent reads in one turn, and read files in large contiguous ranges rather than stepping through small windows.
 - Report only defects you can point at in the plan, with evidence from the code or the spec. Style preferences are not findings.
 
 ## Output format
