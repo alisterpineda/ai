@@ -1,7 +1,7 @@
 ---
 # ── Portable (agentskills.io spec) ──
 name: plan
-description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session or when asked, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices that change behavior a user could observe: once before drafting, and again only when a review finding needs one. A subagent reviews the plan, up to 3 times. Research runs on the vendor's fast tier, reviews on its smart tier, up to the session's model, at medium effort. Changes no code. Usage: /swe:plan [--review-model <name>] [--review-effort <level>] [target …] [context]. User-invoked only."
+description: "Write an implementation plan: how to build a spec, GitHub issues, Azure DevOps work items, or what the conversation agreed, worked out against the real code, with outside APIs checked against official docs. One file, under .scratch/ (or an existing, gitignored .local/) unless the repo's instructions name a location: goal, acceptance criteria, decisions, cautious readings, checks, slices only for work bigger than one session or when asked, and numbered steps that each name their criteria, files and symbols, the test to write first, and the check that shows the step is done. Asks only about choices that change behavior a user could observe: once before drafting, and again only when a review finding needs one. A subagent reviews the plan, up to 5 times. Research runs on the vendor's fast tier, reviews on its smart tier, up to the session's model, at medium effort. Changes no code. Usage: /swe:plan [--review-model <name>] [--review-effort <level>] [target …] [context]. User-invoked only."
 compatibility: "Tickets come through the skill swe:fetch-tickets, called by name, else a paste: GitHub needs gh or the public API; Azure DevOps a work-item MCP tool or az. Research, the ticket fetch, and the review run in subagents, or inline on hosts without one. Official docs need web access; without it the facts they would settle are listed as unverified. Hosts that ignore disable-model-invocation lose the user-only guarantee."
 
 # ── Non-spec extensions, honored by Claude Code and GitHub Copilot ──
@@ -46,6 +46,19 @@ argument-hint: "[--review-model <name>] [--review-effort <level>] [target …] [
 # - The review's model sits on its own report line, after the three fixed
 #   lines the evals match, and is left out when no subagent ran a review:
 #   the `Review:` line already says `inline`.
+# - The review limit is 5, a budget and not a stop for a runaway loop as in
+#   implement. Over 14 plans in one repo, 12 hit the old limit of 3 with the
+#   third review still finding 1 to 7 defects, and two taken to 6 by hand
+#   never ended clean. Serious defects came at a flat rate (12 across the
+#   second reviews, 14 across the third): each fresh reviewer samples a
+#   different part of the plan. So no severity rule ends the loop: all 4
+#   plans whose second review found nothing serious got a serious finding in
+#   the third. For the same reason the last review's findings are fixed,
+#   where implement leaves them unfixed. `Findings per review:` in the report
+#   shows whether 5 is the right budget.
+# - Step 5's rules on test data, shared test state, and the existing tests a
+#   step breaks come from those reviews: the three made up about a quarter of
+#   the findings after review 1.
 ---
 
 # Plan
@@ -167,32 +180,33 @@ Delivers criteria <numbers>: <what it delivers end to end>
 
 - **Decisions** hold the source's decisions that shape the build, the design it settles that a step builds on, and the user's answers from step 4. An accepted held-back requirement also becomes a numbered criterion.
 - **Steps** are in build order, each building only on code that exists or an earlier step makes, and each small enough to write its test, make it pass, and get the checks green in one go. A step that serves no criterion directly names the one it supports (a helper, a fixture, a migration).
-- **Files** are real paths, with existing symbols named as they are. Mark what the step creates `(new)`.
+- **Files** are real paths, with existing symbols named as they are. Mark what the step creates `(new)`. A step that changes something existing tests rely on (a signature, a route, a response's shape, a fixture or its data) lists those test files too, and says what changes in them.
 - **Relies on** appears only on a step that depends on an external fact from step 3, one line per fact, with the evidence found for it. An unverified fact is also listed under Cautious readings.
-- **Test first.** The seam is the most public interface where the criterion's behavior shows and the existing tests already reach: a caller-facing signature, a CLI, a request handler, never a private helper. The test follows the repo's framework and layout, and asserts the behavior the criterion names, not how the code gets there. Name the test for that behavior, never for the plan's own labels (a milestone, slice, step, or criterion number): the name is committed, and the plan may not be. When no automated test can check the step (documentation, a configuration value, copy), write `Test first: none, <why>`, and make Done when say what to read or run to see it.
+- **Test first.** The seam is the most public interface where the criterion's behavior shows and the existing tests already reach: a caller-facing signature, a CLI, a request handler, never a private helper. The test follows the repo's framework and layout, and asserts the behavior the criterion names, not how the code gets there. Give the test data under which a wrong build fails: to show an order, a limit, or which of two values wins, pick data where the likely wrong build gives a different result. Where tests share state (a database, a folder, or a server started once for a class or file), the test passes whatever the others leave there and in any order: it makes its own data distinct and asserts only on that. Name the test for that behavior, never for the plan's own labels (a milestone, slice, step, or criterion number): the name is committed, and the plan may not be. When no automated test can check the step (documentation, a configuration value, copy), write `Test first: none, <why>`, and make Done when say what to read or run to see it.
 - **Done when** names the command and its expected result: the step's test passes and the project checks stay green.
 - **Slices** appear only when the steps won't fit in one agent session, or when the context asks for them. Each delivers whole criteria end to end: its steps name every criterion on its `Delivers criteria` line and no other slice's, and a supporting step sits in the slice of the criterion it supports. Every step sits under a slice's heading, in build order, and step numbers run on from one slice to the next. The `Delivers criteria` line stays on one line. Without slices, leave out the slice headings and their `Delivers criteria` lines: the steps follow `## Steps` directly.
 - A step is marked done once its work is committed, by appending ` Done: <YYYY-MM-DD>, <commit sha>.` to its first line. A slice is done when all its steps are.
 
 ## 6. Review
 
-Review the plan up to 3 times. Each review starts a fresh subagent in the foreground (on Claude Code, `run_in_background: false`), on the review model at the review effort. Its prompt gives the absolute path of `references/reviewer.md`, to read first and follow exactly; the plan's path; the spec's path when the source is a spec; and the criteria in scope when a context narrowed them.
+Review the plan up to 5 times. Each review starts a fresh subagent in the foreground (on Claude Code, `run_in_background: false`), on the review model at the review effort. Its prompt gives the absolute path of `references/reviewer.md`, to read first and follow exactly; the plan's path; the spec's path when the source is a spec; and the criteria in scope when a context narrowed them.
 
 Without a subagent tool, or when one fails, run the charter yourself as a separate pass: re-read the plan, the source, and the code from scratch, leaning toward finding problems, since you wrote the plan. Say in the report that the review ran inline.
 
 Check each finding against the code and the plan. Fix the plan for each that holds; record each that doesn't, with the reason. A finding whose fix needs a choice that changes behavior a user could observe goes to the user as in step 4, one batch per review, and you apply the answers.
 
-Review again when this review fixed anything. Stop when a review fixes nothing, or after review 3: a finding still unresolved then is unfixed.
+Review again when this review fixed anything. Stop when a review fixes nothing, or after review 5. The last review's findings are fixed like any other's; a finding still unresolved then is unfixed.
 
 ## 7. Report
 
-Your final message is this template. Keep the wording of its first three lines, the `Review model:` line, and the build line, filling in the values; word the lines between them yourself.
+Your final message is this template. Keep the wording of its first three lines, the `Review model:` and `Findings per review:` lines, and the build line, filling in the values; word the lines between them yourself.
 
 ````
 Plan: <path>
 <n> criteria, <n> steps[, <n> slices]; <n> decisions, <n> cautious readings.
 Review: <n> reviews[, inline]; <n> findings fixed, <n> rejected, <n> unfixed.
 <when a subagent ran a review: Review model: <review model>, <review effort> effort>
+Findings per review: <the number each review reported, in order, comma-separated>
 
 <the cautious readings, one per line, when there are any>
 <each unfixed finding, with what it found and where, when there are any>
