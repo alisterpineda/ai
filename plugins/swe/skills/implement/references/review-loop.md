@@ -1,13 +1,15 @@
 # Review loop
 
-Review the run's work, fix the findings that need no choice from the user, and review again, at most 7 reviews. The review only reports; you make the fixes.
+Review the work, fix the findings that need no choice from the user, and review again, at most 7 reviews. The review only reports; you make the fixes.
+
+The skill that sent you here named **the work** (the files whose findings are yours to fix), **the source** (what states what the work should do, which may be nothing), and the **starting changes**, and set the review model and the review effort.
 
 ## Run a review
 
 Start one general-purpose subagent on the review model, at the review effort, in the foreground (on Claude Code, `run_in_background: false`), and wait for its result before doing anything else. Its prompt holds:
 
 - the repository's absolute path, to work from;
-- to invoke the skill `swe:code-review-core`, by name, and follow it to the end, with these arguments and no target: `--uncommitted`, then `--spec <the source's absolute path>` when the source is a file, then `--slice <n>` when the run built one slice of a plan, `--model <name>` when the arguments held `--review-model`, `--effort <the review effort>`, and `--serious-only` on the second review and every later one;
+- to invoke the skill `swe:code-review-core`, by name, and follow it to the end, with these arguments and no target: `--uncommitted`, then `--spec <the source's absolute path>` when the source is a file, then `--slice <n>` when the work is one slice of the source, `--model <name>` when the arguments held `--review-model`, `--effort <the review effort>`, and `--serious-only` on the second review and every later one;
 - that its final message is the review's report, or the message that stopped the review, word for word.
 
 Without a subagent tool, invoke `swe:code-review-core` yourself, by name, with the same arguments. When it hands its report back, continue here.
@@ -33,7 +35,7 @@ Take each confirmed finding in the report's order and do the first of these that
 1. **The same finding as one you deferred or left unfixed**: its entry stays as it is.
 2. **The same finding as one you fixed**: the fix didn't hold. Leave the code as it is, and mark the entry unfixed when the finding is serious, noted when it is minor.
 3. **This is the last review the limit allows, and the finding is serious**: mark it unfixed, as found by the last review. A fix made now would reach the tree unreviewed.
-4. **Its site is in a file from the starting changes that no unit of this run changed**: defer it as in the tree before this run. A file a unit changed is the run's work as a whole, the lines that were there at the start included: a finding anywhere in it goes on to the next rule.
+4. **Its site is in a file from the starting changes that is outside the work**: defer it as in the tree before this run. A file of the work is yours to fix as a whole, the lines that were there at the start included: a finding anywhere in it goes on to the next rule.
 5. **This is the second review or a later one, and the finding is minor**: note it, with the review that found it, and leave the code as it is. A noted entry seen again as minor stays as it is.
 6. **Its fix needs the user's choice**: defer it, with the choice in one sentence. A fix needs a choice when:
    - the ways to fix it differ in behavior a user could observe, and neither the source nor the code around it settles which;
@@ -51,7 +53,7 @@ When this review led to no fix that is still in the tree, the loop ends. Otherwi
 
 ## Record for the report
 
-Keep, for steps 6 and 7: how many reviews reported, how many findings each one confirmed, and how the loop ended, and each ledger entry with its state, the files a fix changed, and the reason it was deferred, noted, or left unfixed.
+Keep, for the steps that follow in your skill: how many reviews reported, how many findings each one confirmed, and how the loop ended, and each ledger entry with its state, the files a fix changed, and the reason it was deferred, noted, or left unfixed.
 
 The loop ended, by the first of these that fits:
 

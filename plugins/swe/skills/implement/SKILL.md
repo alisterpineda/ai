@@ -86,8 +86,13 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 # - Workers and reviews default to the delegate model and effort in
 #   references/delegate-model.md: one row per session model, one column per
 #   role, each cell a model and an effort, so the session looks its answer
-#   up and derives nothing. code-review-core and plan hold copies of the
-#   file, and the check script fails when the three differ.
+#   up and derives nothing. code-review-core, plan, and review-fix hold
+#   copies of the file, and the check script fails when they differ.
+# - references/review-loop.md is shared the same way with review-fix, which
+#   runs the loop on work built outside this skill. The file speaks of "the
+#   work", "the source", and "the starting changes", and each skill says
+#   what those are before sending the session there: here the work is the
+#   files a unit changed, there it is every uncommitted file.
 # - The table is written out from tiers. Each vendor has a top, a smart, and
 #   a fast model (Fable or Mythos, Opus, Sonnet; Astra, Sol, Terra; Carbon,
 #   Neon, Hydrogen). Workers and researchers take the fast tier and
@@ -222,7 +227,7 @@ Skip this step, and name the reason on the report's `Review:` line, when:
 - the arguments hold `--no-review`;
 - a unit ended the run.
 
-Otherwise read `references/review-loop.md` and follow it. A review's report is never your final message: the run ends only with step 7's report.
+Otherwise read `references/review-loop.md` and follow it. The work is every file a unit of this run changed, and the source is the one step 1 settled. A review's report is never your final message: the run ends only with step 7's report.
 
 ## 6. Commit
 

@@ -13,7 +13,8 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 
 # Maintainer notes (frontmatter never reaches the model):
 # - An engine apart from /swe:code-review because two user-invoked skills
-#   can't call each other: /swe:implement's review loop calls this one by name.
+#   can't call each other: the review loop of /swe:implement and
+#   /swe:review-fix calls this one by name.
 #   The references and scripts live here; the user command is a thin wrapper.
 # - "The report ends the run" names the caller on purpose. Worded flatly, one
 #   run in three ended a calling skill's turn on the review's report.
@@ -28,8 +29,8 @@ compatibility: "Spawns parallel subagents where the host has a subagent tool, an
 #   every charter reads a spec path, as for a file spec.
 # - Without --model, reviewers and verifiers run on the delegate model in
 #   references/delegate-model.md, taking its Reviewer column.
-#   /swe:implement and /swe:plan hold copies of the file, and the check
-#   script fails when the three differ. An explicit --model always wins.
+#   /swe:implement, /swe:plan, and /swe:review-fix hold copies of the file,
+#   and the check script fails when they differ. An explicit --model always wins.
 # - Without --effort, they run at the same column's effort, whatever the
 #   session's, so a review costs the same at any session effort. The
 #   snapshot script prints `effort: default` and leaves the level to the

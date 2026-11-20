@@ -38,9 +38,9 @@ argument-hint: "[--review-model <name>] [--review-effort <level>] [target …] [
 #   references/delegate-model.md, taking its Researcher column for the fetch
 #   and researchers and its Reviewer column for reviews, so a plan costs the
 #   same whatever the session is set to. The description repeats the table's
-#   tiers and effort for users. implement and
-#   code-review-core hold copies of the file, and the check script fails
-#   when the three differ. Only the review has flags: it is the one place
+#   tiers and effort for users. implement,
+#   code-review-core, and review-fix hold copies of the file, and the check
+#   script fails when they differ. Only the review has flags: it is the one place
 #   worth buying the top model or more effort back, while researchers return
 #   pointers and the fetch relays a result unchanged.
 # - The review's model sits on its own report line, after the three fixed
