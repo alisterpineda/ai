@@ -83,6 +83,17 @@ argument-hint: "[--worker-model <name>] [--worker-effort <level>] [--review-mode
 #   the rule that a large unit stays alone. The report's Group column is
 #   there to tune both. The price: a red check points at a group's units,
 #   not at one.
+# - Step 4 checks a group's scope and reads only the files no unit names and
+#   the code a later group builds on. It used to read every change. Over 39
+#   runs that read, with the diffs chained onto check commands, was about 37%
+#   of what a run added to the session's context (about 20K tokens a run),
+#   and across 148 worker hand-backs it caught two things: a file a step
+#   named that the worker left out, which the scope check also catches, and
+#   an unclosed doc tag. The checks caught the rest, and the review reads
+#   the whole change anyway. 132 of those workers ran on Opus, so if
+#   fast-tier workers start missing criteria that only a read shows, widen
+#   the read before moving workers up a tier. Check output needs no rule:
+#   all 158 check runs already piped it through `tail` or `grep`.
 # - Workers and reviews default to the delegate model and effort in
 #   references/delegate-model.md: one row per session model, one column per
 #   role, each cell a model and an effort, so the session looks its answer
@@ -210,13 +221,18 @@ To delegate a group, start one subagent on the worker model, at the worker effor
 Whoever built it, check every unit of the group yourself:
 
 1. Run each unit's own check, then the project's checks once.
-2. Read every change the group made, and hold it against each unit and its criteria: it does what the unit says, tests assert the behavior the criterion names, nothing beyond the group's units changed, and no name, comment, or message carries one of the source's labels.
+2. Check the group's scope. Run `git status --porcelain` and `git diff --stat`, and compare their output with the previous group's, or with the starting changes for the first group: the files that differ are the files the group changed. Every file the group's units name is among them, or already holds the unit's work when step 2 found it built. Search the lines the group added, new files included, for the source's labels: no name, comment, or message carries one.
+3. Read these, and hold each against its unit and criteria:
+   - the diff of each changed file that no unit of the group names: it is something a unit needs, and nothing beyond the group's units changed;
+   - the code a later group builds on, which that group's brief names by file and symbol.
+
+   Step 5's review reads the rest. When the arguments hold `--no-review`, read every change the group made instead: it does what the unit says, and tests assert the behavior the criterion names.
 
 A check that fails in code no unit of this run touched is the project's: record it for the report and leave it.
 
 When a worker returns `Status: blocked`, check the units it finished as above, and skip the checks and the re-brief for the unit it stopped at. A block the code settles (a renamed symbol, a moved file) is yours: build that unit yourself. A block on a choice that changes behavior a user could observe goes to the user as in step 2, and you build the unit from the answer. The group's units after the blocked one become a new group, built after it.
 
-When a worker's unit fails, send the same worker what failed, once: the unit, and the command and its output, or the criterion and the lines that miss it. Continue that worker where the host allows, else start a fresh one whose prompt holds the failed units only, as step 3 lists, plus the failure and what the group already built, by file and symbol. Check again. When a unit fails a second time, fix that unit yourself. When your own work fails, fix it. A unit you can't get to pass after three attempts of your own ends the run: go to step 7 and report it as the stop.
+When a worker's unit fails, send the same worker what failed, once: the unit, and the command and its output, the file it names that the group left unchanged, or the criterion and the lines that miss it. Continue that worker where the host allows, else start a fresh one whose prompt holds the failed units only, as step 3 lists, plus the failure and what the group already built, by file and symbol. Check again. When a unit fails a second time, fix that unit yourself. When your own work fails, fix it. A unit you can't get to pass after three attempts of your own ends the run: go to step 7 and report it as the stop.
 
 A passing plan step stays unmarked in the plan until its work is committed (step 8).
 
