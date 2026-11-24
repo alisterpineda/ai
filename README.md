@@ -36,6 +36,12 @@ Claude Code-only customizations (no Copilot or Codex equivalent).
 |---|---|---|
 | `install-statusline` | **user-only**: `/cc:install-statusline` | Installs a status line showing model and effort, context usage, 5h/7d rate-limit usage (green when under pace) with reset countdowns, and the session name. Copies the script into `~/.claude` and points `settings.json` at it, backing up anything it replaces and asking before overwriting a status line or script it didn't install. Re-run after a plugin update to pick up changes. macOS/Linux need `jq`; Windows uses a PowerShell port and needs nothing extra. |
 
+### copilot
+
+GitHub Copilot-only customizations, inert in Claude Code and Codex.
+
+It has one hook and no skills. When a session starts or resumes, the hook reads the session's model ID from `~/.copilot/session-state/<session id>/events.jsonl` and adds it to the session's context, so skills that choose subagent models by the session's model (`swe`) can find it. It needs `sh` on PATH; on Windows, Git for Windows' Unix tools provide it. The hook is a workaround for [microsoft/vscode#343260](https://github.com/microsoft/vscode/issues/343260), to be removed once that is fixed.
+
 ### core
 
 General-purpose skills, not tied to one domain.

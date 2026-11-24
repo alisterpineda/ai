@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "command": "sh \"${PLUGIN_ROOT}/hooks/scripts/session-model.sh\"",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}
