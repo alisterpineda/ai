@@ -59,6 +59,12 @@ argument-hint: "[--review-model <name>] [--review-effort <level>] [target …] [
 # - Step 5's rules on test data, shared test state, and the existing tests a
 #   step breaks come from those reviews: the three made up about a quarter of
 #   the findings after review 1.
+# - The layout fixes a step's first line, the Do sub-bullet, line wrapping,
+#   and when code is fenced, and the report fixes its fence, path, and
+#   cautious-readings list, because 23 plans and 20 reports in one repo
+#   varied in each: first lines ran to 2,000 characters with `Criteria:` and
+#   the done mark at the end, two plans hard-wrapped and split code spans
+#   across lines, and 2 reports came fenced with 18 plain.
 ---
 
 # Plan
@@ -171,7 +177,8 @@ Source: <spec path[, criteria <numbers>] | ticket refs | the conversation's Shar
 ### Slice <n>: <name>
 Delivers criteria <numbers>: <what it delivers end to end>
 
-1. <what the step does>. Criteria: <numbers | support for <n>>
+1. <what the step does, in one sentence>. Criteria: <numbers | support for <n>>
+   - Do: <what to add or change, in the detail the builder needs>
    - Files: `<path>` (`<symbol>`, …)
    - Relies on: <external fact> (<URL | installed file path | unverified>)
    - Test first: `<test file>` `<test name>`, through `<seam>`: <what it asserts>
@@ -180,12 +187,18 @@ Delivers criteria <numbers>: <what it delivers end to end>
 
 - **Decisions** hold the source's decisions that shape the build, the design it settles that a step builds on, and the user's answers from step 4. An accepted held-back requirement also becomes a numbered criterion.
 - **Steps** are in build order, each building only on code that exists or an earlier step makes, and each small enough to write its test, make it pass, and get the checks green in one go. A step that serves no criterion directly names the one it supports (a helper, a fixture, a migration).
+- **A step's first line** is one sentence that names what the step does, then its criteria, and nothing more: the done mark is appended to it, and a reader scans these lines to find a step. Everything else the builder needs goes under **Do**, which is left out when that sentence already says it all. A step has only the layout's sub-bullets, in the layout's order.
 - **Files** are real paths, with existing symbols named as they are. Mark what the step creates `(new)`. A step that changes something existing tests rely on (a signature, a route, a response's shape, a fixture or its data) lists those test files too, and says what changes in them.
 - **Relies on** appears only on a step that depends on an external fact from step 3, one line per fact, with the evidence found for it. An unverified fact is also listed under Cautious readings.
 - **Test first.** The seam is the most public interface where the criterion's behavior shows and the existing tests already reach: a caller-facing signature, a CLI, a request handler, never a private helper. The test follows the repo's framework and layout, and asserts the behavior the criterion names, not how the code gets there. Give the test data under which a wrong build fails: to show an order, a limit, or which of two values wins, pick data where the likely wrong build gives a different result. Where tests share state (a database, a folder, or a server started once for a class or file), the test passes whatever the others leave there and in any order: it makes its own data distinct and asserts only on that. Name the test for that behavior, never for the plan's own labels (a milestone, slice, step, or criterion number): the name is committed, and the plan may not be. When no automated test can check the step (documentation, a configuration value, copy), write `Test first: none, <why>`, and make Done when say what to read or run to see it.
 - **Done when** names the command and its expected result: the step's test passes and the project checks stay green.
 - **Slices** appear only when the steps won't fit in one agent session, or when the context asks for them. Each delivers whole criteria end to end: its steps name every criterion on its `Delivers criteria` line and no other slice's, and a supporting step sits in the slice of the criterion it supports. Every step sits under a slice's heading, in build order, and step numbers run on from one slice to the next. The `Delivers criteria` line stays on one line. Without slices, leave out the slice headings and their `Delivers criteria` lines: the steps follow `## Steps` directly.
-- A step is marked done once its work is committed, by appending ` Done: <YYYY-MM-DD>, <commit sha>.` to its first line. A slice is done when all its steps are.
+- A step is marked done once its work is committed, by appending ` Done: <YYYY-MM-DD>, <commit sha>.` to its first line. A slice is done when all its steps are. `/swe:implement` adds a `## Open findings` section at the end of the plan for what its reviews leave unfixed; a new plan has none.
+
+**Formatting**, everywhere in the plan:
+
+- **One line each.** A paragraph, a list item, or a sub-bullet is one line, however long. Never break a line to wrap it: a wrapped line splits code spans in two.
+- **Code.** Inline backticks hold a name, a path, or a command that fits on one line. Code that spans lines (a type, a signature with its parameters, a query, a block of configuration) is a fenced block with its language, indented to sit under its bullet, with a blank line before and after and a closing fence at the same indent.
 
 ## 6. Review
 
@@ -199,7 +212,7 @@ Review again when this review fixed anything. Stop when a review fixes nothing, 
 
 ## 7. Report
 
-Your final message is this template. Keep the wording of its first three lines, the `Review model:` and `Findings per review:` lines, and the build line, filling in the values; word the lines between them yourself.
+Your final message is this template, sent as plain markdown with no code fence around it. Keep the wording of its first three lines, the `Review model:` and `Findings per review:` lines, the `Cautious readings:` and `Unfixed findings:` lines, and the build line, filling in the values; word the rest yourself.
 
 ````
 Plan: <path>
@@ -208,10 +221,18 @@ Review: <n> reviews[, inline]; <n> findings fixed, <n> rejected, <n> unfixed.
 <when a subagent ran a review: Review model: <review model>, <review effort> effort>
 Findings per review: <the number each review reported, in order, comma-separated>
 
-<the cautious readings, one per line, when there are any>
-<each unfixed finding, with what it found and where, when there are any>
+<anything else the user needs to know, in a sentence or two, when there is anything>
+
+Cautious readings:
+- <each cautious reading, one bullet each>
+
+Unfixed findings:
+- <each unfixed finding, with what it found and where>
 
 To build it: `/swe:implement <path>[ slice 1]`
 ````
 
-The build command ends with ` slice 1` only when the plan has slices.
+- End each line from `Plan:` through `Findings per review:` with two spaces, markdown's hard line break: without it, a host that renders markdown joins those lines into one paragraph.
+- `<path>` is the plan's path relative to the current directory, or the absolute path when the plan sits outside it.
+- List every cautious reading, in the plan's order and without bold labels. Leave out `Cautious readings:` or `Unfixed findings:`, with its bullets, when there are none.
+- The build line is the last line: nothing follows it. Its command ends with ` slice 1` only when the plan has slices.
