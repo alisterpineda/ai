@@ -40,7 +40,7 @@ Claude Code-only customizations (no Copilot or Codex equivalent).
 
 GitHub Copilot-only customizations, inert in Claude Code and Codex.
 
-It has one hook and no skills. When a session starts or resumes, the hook reads the session's model ID from `~/.copilot/session-state/<session id>/events.jsonl` and adds it to the session's context, so skills that choose subagent models by the session's model (`swe`) can find it. It needs `sh` on PATH; on Windows, Git for Windows' Unix tools provide it. The hook is a workaround for [microsoft/vscode#343260](https://github.com/microsoft/vscode/issues/343260), to be removed once that is fixed.
+It has one hook and no skills. When a session starts or resumes, the hook reads the session's model ID from `~/.copilot/session-state/<session id>/events.jsonl` and adds it to the session's context, so skills that choose subagent models by the session's model (`swe`) can find it. The hook has a shell script and a PowerShell script that do the same thing: macOS and Linux run the first with `sh`, and Windows runs the second with `pwsh`. On Windows the hook needs PowerShell 7 installed and on PATH: the Windows PowerShell 5.1 that ships with Windows has no `pwsh`, and without it the hook adds nothing. The hook is a workaround for [microsoft/vscode#343260](https://github.com/microsoft/vscode/issues/343260), to be removed once that is fixed.
 
 ### core
 

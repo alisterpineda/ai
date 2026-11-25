@@ -4,7 +4,8 @@
     "sessionStart": [
       {
         "type": "command",
-        "command": "sh \"${PLUGIN_ROOT}/hooks/scripts/session-model.sh\"",
+        "bash": "sh \"${PLUGIN_ROOT}/hooks/scripts/session-model.sh\"",
+        "powershell": "pwsh -NoProfile -File \"${PLUGIN_ROOT}/hooks/scripts/session-model.ps1\"",
         "timeoutSec": 15
       }
     ]
