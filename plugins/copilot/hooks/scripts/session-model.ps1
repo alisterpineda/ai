@@ -5,6 +5,9 @@
 # (<COPILOT_HOME or ~/.copilot>/session-state/<id>/events.jsonl), and prints an
 # additionalContext tag naming the model of the log's latest model event.
 # Prints nothing and exits 0 when the ID or the model can't be found.
+# The tag holds nothing that changes between runs, such as a time: the host
+# keeps only the latest output and puts it first in every model call, so a tag
+# that read differently on each resume would end the prompt cache's reuse.
 
 $ErrorActionPreference = 'Stop'
 try {
@@ -36,8 +39,7 @@ try {
     }
     if (-not $model) { exit 0 }
 
-    $at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ', [System.Globalization.CultureInfo]::InvariantCulture)
-    $text = "<session_model at=`"$at`">This session's model ID is $model. When several session_model tags are present, the one with the latest time is current.</session_model>"
+    $text = "<session_model>This session's model ID is $model.</session_model>"
     @{ additionalContext = $text } | ConvertTo-Json -Compress
 } catch { }
 exit 0

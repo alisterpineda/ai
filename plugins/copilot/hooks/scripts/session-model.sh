@@ -4,6 +4,9 @@
 # (<COPILOT_HOME or ~/.copilot>/session-state/<id>/events.jsonl), and prints an
 # additionalContext tag naming the model of the log's latest model event.
 # Prints nothing and exits 0 when the ID or the model can't be found.
+# The tag holds nothing that changes between runs, such as a time: the host
+# keeps only the latest output and puts it first in every model call, so a tag
+# that read differently on each resume would end the prompt cache's reuse.
 # POSIX sh, except that `sleep 0.1` takes a fraction of a second.
 
 input=$(cat)
@@ -34,8 +37,7 @@ while [ "$tries" -lt 50 ]; do
   if [ -f "$log" ]; then
     model=$(latest_model)
     if [ -n "$model" ]; then
-      now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-      printf '{"additionalContext":"<session_model at=\\"%s\\">This session'"'"'s model ID is %s. When several session_model tags are present, the one with the latest time is current.</session_model>"}\n' "$now" "$model"
+      printf '{"additionalContext":"<session_model>This session'"'"'s model ID is %s.</session_model>"}\n' "$model"
       exit 0
     fi
   fi

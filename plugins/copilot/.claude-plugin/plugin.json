@@ -1,6 +1,6 @@
 {
   "name": "copilot",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "GitHub Copilot-specific customizations: a session-start hook that tells the session its model ID, read from the session log. Does nothing in other hosts.",
   "author": {
     "name": "Alister Pineda",

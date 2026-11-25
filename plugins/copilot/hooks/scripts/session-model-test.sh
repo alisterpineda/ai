@@ -27,13 +27,11 @@ change_line() { printf '{"type":"session.model_change","data":{"previousModel":"
 other_line() { printf '{"type":"user.message","data":{"content":"hi"}}\n'; }
 # log <root> <id> → reads the log text from stdin
 log() { mkdir -p "$1/session-state/$2"; cat >"$1/session-state/$2/events.jsonl"; }
-tag() { printf "<session_model at=\"%s\">This session's model ID is %s. When several session_model tags are present, the one with the latest time is current.</session_model>" "$1" "$2"; }
+tag() { printf "<session_model>This session's model ID is %s.</session_model>" "$1"; }
 # says <model>: the output is a JSON object whose additionalContext is the tag for <model>
 says() {
   local ctx; ctx=$(printf '%s' "$out" | jq -r .additionalContext 2>/dev/null) || return 1
-  local at; at=$(printf '%s' "$ctx" | sed -n 's/^<session_model at="\([^"]*\)">.*/\1/p')
-  printf '%s' "$at" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' || return 1
-  [ "$ctx" = "$(tag "$at" "$1")" ]
+  [ "$ctx" = "$(tag "$1")" ]
 }
 
 # suite <name> <command...> → runs every check against that hook command
@@ -62,14 +60,6 @@ suite() {
   check "session_id is accepted" '[ $code -eq 0 ] && says model-a'
   run '{ "sessionId" : "s1", "source" : "resume" }'
   check "spaces around the colon are accepted" '[ $code -eq 0 ] && says model-a'
-
-  # --- locale ---------------------------------------------------------------
-  # A Thai locale counts years in another calendar, and a Finnish one writes
-  # the time with dots; the tag's time stays the same either way.
-  LC_ALL=th_TH.UTF-8 LANG=th_TH.UTF-8 run '{"sessionId":"s1"}'
-  check "the tag's time ignores the locale's calendar" '[ $code -eq 0 ] && says model-a && [ "${out#*at=??$(date -u +%Y)-}" != "$out" ]'
-  LC_ALL=fi_FI.UTF-8 LANG=fi_FI.UTF-8 run '{"sessionId":"s1"}'
-  check "the tag's time ignores the locale's separators" '[ $code -eq 0 ] && says model-a'
 
   # --- HOME fallback --------------------------------------------------------
   # USERPROFILE too: on Windows that, not HOME, is PowerShell's home.
