@@ -1,6 +1,6 @@
 # pr-writeup evals
 
-`claude plugin eval` cases for `swe:pr-writeup`. Each fixture sources `../commit-message/shop.sh` for its `main` branch, then builds a feature branch on top; the two trigger cases reuse `net-result`'s. The repo-wide eval conventions (models, graders, sandbox) are in the root `CLAUDE.md`.
+`claude plugin eval` cases for `swe:pr-writeup`. Each fixture sources `../commit-message/shop.sh` for its `main` branch, then builds a feature branch on top; `trigger-open-pr` and `no-trigger-summarize-pr` reuse `net-result`'s, and `trigger-raise-pr` adds a remote to it. The repo-wide eval conventions (models, graders, sandbox) are in the root `CLAUDE.md`.
 
 | Tag | Cases | What they check |
 |---|---|---|
@@ -9,6 +9,7 @@
 | `yield` | `repo-target` | The repo's `AGENTS.md` sends pull requests to `develop`, which is one commit (a tax function) ahead of `main`; the fixture has no remote. The title and description cover the branch's discount function and don't present the tax function as part of the PR. |
 | `yield` | `repo-skill` | The repo ships its own PR-writing skill in `.claude/skills/pr-text/`, with a `shop: ` title prefix and `## Risk` and `## What changed` sections: the run gives that title and those sections, with no `## Summary` or `## Changes`. It doesn't check which skill fired first, only whose format the text ends in. |
 | `trigger` | `trigger-open-pr` | "Open a PR for this branch" fires the skill, and the run gives a title and description to use without claiming it opened a PR or pushed. The fixture has no remote. |
+| `trigger` | `trigger-raise-pr` | "Looks good. Raise a PR." at the end of a seeded work session fires the skill. The fixture has an `origin` the branch can be pushed to, a bare repository inside `.git`, so the run could go straight to opening the PR. It checks only that the skill loads. |
 | `no-trigger` | `no-trigger-summarize-pr` | Asking for a summary of a teammate's PR before reviewing it doesn't fire the skill. |
 
 ## Run
